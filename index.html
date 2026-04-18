@@ -106,6 +106,12 @@
         <p id="definition-text">Start a mission to begin.</p>
       </div>
 
+      <section class="accessible-controls" aria-labelledby="accessible-controls-heading">
+        <h3 id="accessible-controls-heading">Accessible Interaction</h3>
+        <p id="accessible-status" class="hint" aria-live="polite">Start a mission to load answer choices.</p>
+        <div id="accessible-choice-list" class="accessible-choice-list" role="group" aria-label="Current answer choices"></div>
+      </section>
+
       <div class="canvas-wrap">
         <canvas id="game-canvas" width="1080" height="690" tabindex="0" aria-label="Study Arcade game canvas"></canvas>
       </div>
@@ -162,6 +168,7 @@ Another term: Another definition</pre>
         <p><strong>Banner Drive:</strong> steer left/right and pass under the banner that matches the current definition.</p>
         <p><strong>Controls</strong></p>
         <p>Buttons: Left, Right, and Fire (Term Invaders only). Keyboard: arrow keys to move, <kbd>Enter</kbd>/<kbd>Space</kbd> to fire in Term Invaders, <kbd>P</kbd> to pause/resume, and <kbd>K</kbd> to skip.</p>
+        <p>The <strong>Accessible Interaction</strong> panel provides semantic answer-choice buttons for both game modes if you prefer non-canvas interaction.</p>
         <p>If you change settings during a mission, the game auto-pauses. Changing speed or choices resets the current wave/set, and changing game mode requires clicking <strong>Start Mission</strong> (or switching back to the original mode) before you can resume.</p>
         <p><strong>Scoring</strong></p>
         <p>Correct answers add points. Wrong answers reduce points. In Term Invaders, city integrity drops when terms reach the city.</p>

@@ -293,6 +293,32 @@ button:disabled {
   line-height: 1.35;
 }
 
+.accessible-controls {
+  border: 1px solid #3f5e7f;
+  border-radius: 10px;
+  background: rgba(4, 12, 21, 0.85);
+  padding: 0.55rem 0.6rem;
+  margin-bottom: 0.6rem;
+}
+
+.accessible-controls h3 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.accessible-choice-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 0.45rem;
+  margin-top: 0.45rem;
+}
+
+.accessible-choice-list button {
+  width: 100%;
+  border-radius: 10px;
+  min-height: 42px;
+}
+
 .canvas-wrap {
   border: 2px solid #5aa5dd;
   border-radius: 12px;

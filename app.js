@@ -59,6 +59,8 @@
     cityText: document.getElementById("city-text"),
     remainingText: document.getElementById("remaining-text"),
     definitionText: document.getElementById("definition-text"),
+    accessibleStatus: document.getElementById("accessible-status"),
+    accessibleChoiceList: document.getElementById("accessible-choice-list"),
     canvas: document.getElementById("game-canvas"),
     scoresList: document.getElementById("scores-list"),
     clearScoresBtn: document.getElementById("clear-scores-btn"),
@@ -92,6 +94,7 @@
   setTermsSourceIndicator("none");
   setDefinitionText("Load a terms .txt file, then press Start Mission.");
   updateStartAvailability();
+  renderAccessibleChoices();
   requestAnimationFrame(loop);
 
   function createGameState() {
@@ -341,6 +344,7 @@
       els.helpCloseBtn.focus();
     }
     announce("Help opened.");
+    renderAccessibleChoices();
   }
 
   function closeHelpModal(restoreFocus) {
@@ -363,6 +367,7 @@
       state.lastFocusedElement.focus();
     }
     announce("Help closed.");
+    renderAccessibleChoices();
   }
 
   function trapHelpFocus(event) {
@@ -730,10 +735,12 @@
       els.pauseBtn.disabled = true;
       els.pauseBtn.textContent = "Restart Required";
       setDefinitionText("Mode change selected. Start Mission to switch modes, or switch back to continue this mission.");
+      renderAccessibleChoices();
       return;
     }
     els.pauseBtn.disabled = false;
     els.pauseBtn.textContent = state.game.paused ? "Resume" : "Pause";
+    renderAccessibleChoices();
   }
 
   function restoreDefinitionForCurrentMission() {
@@ -805,6 +812,7 @@
       state.game.lastNow = performance.now();
       els.canvas.focus();
     }
+    renderAccessibleChoices();
   }
 
   function skipDefinition() {
@@ -1061,14 +1069,17 @@
     state.game.remainingTargets.splice(insertAt, 0, target);
   }
 
-  function evaluateBannerSet(set) {
+  function evaluateBannerSet(set, forcedBannerIndex) {
     if (set.evaluated || !state.game.car) {
       return;
     }
     set.evaluated = true;
     set.evaluatedAt = performance.now();
+    const forcedIndex = Number.isInteger(forcedBannerIndex) ? forcedBannerIndex : -1;
     const carX = state.game.car.x;
-    const bannerIndex = set.banners.findIndex((banner) => carX >= banner.left && carX <= banner.right);
+    const bannerIndex = forcedIndex >= 0 && forcedIndex < set.banners.length
+      ? forcedIndex
+      : set.banners.findIndex((banner) => carX >= banner.left && carX <= banner.right);
     set.chosenBannerIndex = bannerIndex;
     const bannerUnderCar = bannerIndex >= 0 ? set.banners[bannerIndex] : null;
 
@@ -1190,6 +1201,108 @@
       : "Local storage is blocked by browser privacy settings. Scores will not persist after closing.";
   }
 
+  function setAccessibleStatus(text) {
+    if (!els.accessibleStatus) {
+      return;
+    }
+    els.accessibleStatus.textContent = text;
+  }
+
+  function clearAccessibleChoices() {
+    if (!els.accessibleChoiceList) {
+      return;
+    }
+    els.accessibleChoiceList.innerHTML = "";
+  }
+
+  function addAccessibleChoiceButton(label, onClick) {
+    if (!els.accessibleChoiceList) {
+      return;
+    }
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = label;
+    button.addEventListener("click", onClick);
+    els.accessibleChoiceList.appendChild(button);
+  }
+
+  function chooseBannerFromAccessibleLayer(set, bannerIndex) {
+    if (!state.game.running || state.game.gameOver || state.game.paused || state.game.mode !== "banner_drive") {
+      return;
+    }
+    if (!set || set.evaluated || !Number.isInteger(bannerIndex) || bannerIndex < 0 || bannerIndex >= set.banners.length) {
+      return;
+    }
+    const chosen = set.banners[bannerIndex];
+    if (state.game.car && chosen) {
+      state.game.car.x = (chosen.left + chosen.right) / 2;
+      state.game.car.vx = 0;
+    }
+    evaluateBannerSet(set, bannerIndex);
+  }
+
+  function renderAccessibleChoices() {
+    if (!els.accessibleStatus || !els.accessibleChoiceList) {
+      return;
+    }
+    clearAccessibleChoices();
+
+    if (state.game.gameOver) {
+      setAccessibleStatus("Mission ended. Press Start Mission to play again.");
+      return;
+    }
+    if (!state.game.running) {
+      setAccessibleStatus("Start a mission to load answer choices.");
+      return;
+    }
+    if (state.game.modeChangeRestartRequired) {
+      setAccessibleStatus("Mode changed. Start Mission to switch modes, or switch back to the original mode to unlock Resume.");
+      return;
+    }
+    if (state.game.paused) {
+      setAccessibleStatus("Game is paused. Press Resume to continue interactive choices.");
+      return;
+    }
+
+    if (state.game.mode === "classic") {
+      const activeTerms = state.game.activeTerms
+        .filter((term) => term.state === "active")
+        .sort((a, b) => a.lane - b.lane);
+      if (!activeTerms.length) {
+        setAccessibleStatus("Waiting for next wave...");
+        return;
+      }
+      setAccessibleStatus("Term Invaders: choose a lane option to fire immediately.");
+      activeTerms.forEach((term) => {
+        addAccessibleChoiceButton(`Lane ${term.lane + 1}: ${term.term}`, () => {
+          if (!state.game.running || state.game.paused || state.game.gameOver || state.game.mode !== "classic") {
+            return;
+          }
+          selectLane(term.lane);
+          fireAtSelectedLane();
+          els.canvas.focus();
+        });
+      });
+      return;
+    }
+
+    const leadSet = getLeadBannerSet();
+    if (!leadSet) {
+      setAccessibleStatus(state.game.remainingTargets.length ? "Waiting for next banner set..." : "No remaining definitions.");
+      return;
+    }
+    setAccessibleStatus("Banner Drive: choose the banner that matches the definition.");
+    leadSet.banners
+      .map((banner, index) => ({ banner, index }))
+      .sort((a, b) => a.banner.left - b.banner.left)
+      .forEach(({ banner, index }) => {
+        addAccessibleChoiceButton(`Lane ${banner.lane + 1}: ${banner.term}`, () => {
+          chooseBannerFromAccessibleLayer(leadSet, index);
+          els.canvas.focus();
+        });
+      });
+  }
+
   function updateHud() {
     const unresolvedActive = state.game.activeTerms.filter((term) => term.state !== "correct_flash").length;
     let targetsLeft = state.game.remainingTargets.length + unresolvedActive;
@@ -1201,6 +1314,7 @@
     els.cityText.textContent = `${Math.round(state.game.cityIntegrity)}%`;
     els.cityText.style.color = getCityIntegrityColor(state.game.cityIntegrity);
     els.remainingText.textContent = String(targetsLeft);
+    renderAccessibleChoices();
   }
 
   function getCityIntegrityColor(integrity) {
@@ -1224,6 +1338,7 @@
     els.rightBtn.disabled = !isRunning;
     els.fireBtn.disabled = !isRunning || state.game.mode !== "classic";
     els.pauseBtn.textContent = "Pause";
+    renderAccessibleChoices();
   }
 
   function announce(message, assertive) {
@@ -1736,7 +1851,7 @@
       return false;
     }
     const tag = target.tagName.toLowerCase();
-    return tag === "input" || tag === "textarea" || tag === "select";
+    return tag === "input" || tag === "textarea" || tag === "select" || tag === "button";
   }
 
   function cryptoRandomId() {
