@@ -70,6 +70,14 @@
             </select>
           </div>
           <div class="field-row">
+            <label for="accessibility-mode">Accessibility Mode</label>
+            <select id="accessibility-mode">
+              <option value="standard" selected>Off (Standard)</option>
+              <option value="assisted">Assisted</option>
+              <option value="accessible">Accessible</option>
+            </select>
+          </div>
+          <div class="field-row">
             <label class="inline-checkbox" for="reduce-motion">
               <input id="reduce-motion" type="checkbox">
               Reduced Motion
@@ -106,9 +114,13 @@
         <p id="definition-text">Start a mission to begin.</p>
       </div>
 
-      <section class="accessible-controls" aria-labelledby="accessible-controls-heading">
+      <section id="accessible-controls" class="accessible-controls" aria-labelledby="accessible-controls-heading">
         <h3 id="accessible-controls-heading">Accessible Interaction</h3>
         <p id="accessible-status" class="hint" aria-live="polite">Start a mission to load answer choices.</p>
+        <div class="accessible-actions">
+          <button id="repeat-definition-btn" type="button">Repeat Definition</button>
+          <button id="toggle-scan-btn" type="button" aria-pressed="false">Scan: Off</button>
+        </div>
         <div id="accessible-choice-list" class="accessible-choice-list" role="group" aria-label="Current answer choices"></div>
       </section>
 
@@ -169,6 +181,7 @@ Another term: Another definition</pre>
         <p><strong>Controls</strong></p>
         <p>Buttons: Left, Right, and Fire (Term Invaders only). Keyboard: arrow keys to move, <kbd>Enter</kbd>/<kbd>Space</kbd> to fire in Term Invaders, <kbd>P</kbd> to pause/resume, and <kbd>K</kbd> to skip.</p>
         <p>The <strong>Accessible Interaction</strong> panel provides semantic answer-choice buttons for both game modes if you prefer non-canvas interaction.</p>
+        <p>Accessibility Mode presets: <strong>Off (Standard)</strong> keeps default gameplay, <strong>Assisted</strong> enables accessible answer controls and support visuals, and <strong>Accessible</strong> also auto-pauses each new prompt and can use scan selection.</p>
         <p>If you change settings during a mission, the game auto-pauses. Changing speed or choices resets the current wave/set, and changing game mode requires clicking <strong>Start Mission</strong> (or switching back to the original mode) before you can resume.</p>
         <p><strong>Scoring</strong></p>
         <p>Correct answers add points. Wrong answers reduce points. In Term Invaders, city integrity drops when terms reach the city.</p>

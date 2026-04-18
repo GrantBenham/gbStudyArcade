@@ -313,10 +313,34 @@ button:disabled {
   margin-top: 0.45rem;
 }
 
+.accessible-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 0.35rem;
+}
+
+.accessible-actions button {
+  min-height: 36px;
+  padding: 0.28rem 0.7rem;
+}
+
 .accessible-choice-list button {
   width: 100%;
   border-radius: 10px;
   min-height: 42px;
+}
+
+body.a11y-assisted #definition-text,
+body.a11y-accessible #definition-text {
+  font-size: 1.22rem;
+  line-height: 1.5;
+}
+
+body.a11y-assisted .accessible-choice-list button,
+body.a11y-accessible .accessible-choice-list button {
+  font-size: 1.06rem;
+  min-height: 48px;
 }
 
 .canvas-wrap {

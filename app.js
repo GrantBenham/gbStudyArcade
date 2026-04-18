@@ -15,6 +15,7 @@
   const DEFAULT_GAME_MODE = "classic";
   const DEFAULT_CHOICES_PER_ROUND = 3;
   const DEFAULT_CLASSIC_START_LANE = Math.floor(LANE_COUNT / 2);
+  const DEFAULT_ACCESSIBILITY_MODE = "standard";
 
   const FALL_SPEED_MULTIPLIER = {
     slow: 0.7,
@@ -44,6 +45,7 @@
     gameMode: document.getElementById("game-mode"),
     choicesPerRound: document.getElementById("choices-per-round"),
     fallSpeed: document.getElementById("fall-speed"),
+    accessibilityMode: document.getElementById("accessibility-mode"),
     reduceMotion: document.getElementById("reduce-motion"),
     highContrast: document.getElementById("high-contrast"),
     startBtn: document.getElementById("start-btn"),
@@ -59,8 +61,11 @@
     cityText: document.getElementById("city-text"),
     remainingText: document.getElementById("remaining-text"),
     definitionText: document.getElementById("definition-text"),
+    accessibleControls: document.getElementById("accessible-controls"),
     accessibleStatus: document.getElementById("accessible-status"),
     accessibleChoiceList: document.getElementById("accessible-choice-list"),
+    repeatDefinitionBtn: document.getElementById("repeat-definition-btn"),
+    toggleScanBtn: document.getElementById("toggle-scan-btn"),
     canvas: document.getElementById("game-canvas"),
     scoresList: document.getElementById("scores-list"),
     clearScoresBtn: document.getElementById("clear-scores-btn"),
@@ -121,6 +126,12 @@
       beam: null,
       pulseAt: 0,
       modeChangeRestartRequired: false,
+      accessibilityQuestionPause: false,
+      pendingAccessibleChoiceKey: "",
+      lastPromptAnnouncementKey: "",
+      scanEnabled: false,
+      scanIndex: -1,
+      nextScanAt: 0,
       nextRoundAt: 0,
       lastNow: performance.now()
     };
@@ -131,6 +142,75 @@
     const width = CANVAS_WIDTH - padding * 2;
     const step = width / (LANE_COUNT - 1);
     return Array.from({ length: LANE_COUNT }, (_, lane) => padding + lane * step);
+  }
+
+  function getAccessibilityMode() {
+    return els.accessibilityMode && els.accessibilityMode.value
+      ? els.accessibilityMode.value
+      : DEFAULT_ACCESSIBILITY_MODE;
+  }
+
+  function getAccessibilityProfile() {
+    const mode = getAccessibilityMode();
+    if (mode === "accessible") {
+      return {
+        domInteractionEnabled: true,
+        largerText: true,
+        simplifiedVisuals: true,
+        strongGuides: true,
+        keyboardChoiceHotkeys: true,
+        keepFocusInAccessibleLayer: true,
+        autoPauseOnNewPrompt: true,
+        responseSpeedMultiplier: 0.62,
+        penaltyMultiplier: 0.5,
+        confirmAnswer: true,
+        switchScanAvailable: true
+      };
+    }
+    if (mode === "assisted") {
+      return {
+        domInteractionEnabled: true,
+        largerText: true,
+        simplifiedVisuals: true,
+        strongGuides: true,
+        keyboardChoiceHotkeys: true,
+        keepFocusInAccessibleLayer: true,
+        autoPauseOnNewPrompt: false,
+        responseSpeedMultiplier: 0.82,
+        penaltyMultiplier: 0.75,
+        confirmAnswer: false,
+        switchScanAvailable: false
+      };
+    }
+    return {
+      domInteractionEnabled: false,
+      largerText: false,
+      simplifiedVisuals: false,
+      strongGuides: false,
+      keyboardChoiceHotkeys: false,
+      keepFocusInAccessibleLayer: false,
+      autoPauseOnNewPrompt: false,
+      responseSpeedMultiplier: 1,
+      penaltyMultiplier: 1,
+      confirmAnswer: false,
+      switchScanAvailable: false
+    };
+  }
+
+  function getPenaltyAmount(baseAmount) {
+    const profile = getAccessibilityProfile();
+    return Math.max(1, Math.round(baseAmount * profile.penaltyMultiplier));
+  }
+
+  function applyAccessibilityModeUI() {
+    const mode = getAccessibilityMode();
+    document.body.classList.toggle("a11y-assisted", mode === "assisted");
+    document.body.classList.toggle("a11y-accessible", mode === "accessible");
+    if (mode !== "accessible") {
+      state.game.scanEnabled = false;
+      state.game.scanIndex = -1;
+    }
+    updateScanToggleButton();
   }
 
   function bindEvents() {
@@ -161,7 +241,7 @@
       event.target.value = "";
     });
 
-    [els.gameMode, els.choicesPerRound, els.fallSpeed, els.reduceMotion, els.highContrast].forEach((control) => {
+    [els.gameMode, els.choicesPerRound, els.fallSpeed, els.accessibilityMode, els.reduceMotion, els.highContrast].forEach((control) => {
       control.addEventListener("focus", () => {
         pauseForSettingsEdit();
       });
@@ -220,6 +300,26 @@
       persistSettings();
     });
 
+    els.accessibilityMode.addEventListener("change", () => {
+      const activeMission = state.game.running && !state.game.gameOver;
+      const profile = getAccessibilityProfile();
+      if (activeMission) {
+        pauseForSettingsEdit();
+        const resetNow = resetWaveForMidMissionSettingsChange();
+        announce(resetNow
+          ? "Game paused. Accessibility mode updated and current wave reset."
+          : "Game paused. Accessibility mode updated.");
+      } else {
+        announce(`Accessibility mode set to ${els.accessibilityMode.options[els.accessibilityMode.selectedIndex].text}.`);
+      }
+      if (!profile.switchScanAvailable) {
+        state.game.scanEnabled = false;
+      }
+      applyAccessibilityModeUI();
+      persistSettings();
+      renderAccessibleChoices();
+    });
+
     els.initials.addEventListener("blur", () => {
       els.initials.value = sanitizeInitials(els.initials.value);
       persistSettings();
@@ -261,6 +361,8 @@
     bindDriveButtonHold(els.rightBtn, "right");
     els.fireBtn.addEventListener("click", fireAtSelectedLane);
     els.clearScoresBtn.addEventListener("click", clearScores);
+    els.repeatDefinitionBtn.addEventListener("click", repeatCurrentDefinition);
+    els.toggleScanBtn.addEventListener("click", toggleSwitchScan);
     els.canvas.addEventListener("click", handleCanvasClick);
 
     document.addEventListener("keydown", (event) => {
@@ -288,6 +390,26 @@
         return;
       }
       const key = event.key;
+      if ((key === " " || key === "Enter") && isButtonElement(event.target)) {
+        return;
+      }
+      if (key.toLowerCase() === "r") {
+        event.preventDefault();
+        repeatCurrentDefinition();
+        return;
+      }
+      if (key.toLowerCase() === "s" && getAccessibilityProfile().switchScanAvailable) {
+        event.preventDefault();
+        toggleSwitchScan();
+        return;
+      }
+      if (key >= "1" && key <= "3" && getAccessibilityProfile().keyboardChoiceHotkeys) {
+        const activated = activateAccessibleChoiceByNumber(Number(key));
+        if (activated) {
+          event.preventDefault();
+          return;
+        }
+      }
       if (key >= "1" && key <= "3" && state.game.mode === "classic") {
         event.preventDefault();
         selectLane(Number(key) - 1);
@@ -396,10 +518,12 @@
     els.gameMode.value = state.settings.gameMode || DEFAULT_GAME_MODE;
     els.choicesPerRound.value = String(state.settings.choicesPerRound || DEFAULT_CHOICES_PER_ROUND);
     els.fallSpeed.value = state.settings.fallSpeed || DEFAULT_FALL_SPEED;
+    els.accessibilityMode.value = state.settings.accessibilityMode || DEFAULT_ACCESSIBILITY_MODE;
     if (state.settings.initials) {
       els.initials.value = state.settings.initials;
     }
     document.body.classList.toggle("high-contrast", true);
+    applyAccessibilityModeUI();
     updateModeUI(els.gameMode.value);
   }
 
@@ -674,6 +798,10 @@
     state.game.activeBannerSets = [];
     state.game.lastBannerSpawnAt = 0;
     state.game.car = null;
+    state.game.pendingAccessibleChoiceKey = "";
+    state.game.lastPromptAnnouncementKey = "";
+    state.game.scanEnabled = false;
+    state.game.scanIndex = -1;
 
     if (state.game.mode === "classic") {
       setDefinitionText("Preparing first wave...");
@@ -702,7 +830,7 @@
     updateHud();
     renderCorrectTerms();
     announce("Mission started. Match the definition to the correct term.");
-    els.canvas.focus();
+    focusAccessibleLayerAfterAction();
   }
 
   function buildSelectedPairs() {
@@ -719,8 +847,10 @@
       return false;
     }
     state.game.paused = true;
+    state.game.accessibilityQuestionPause = false;
     state.game.leftPressed = false;
     state.game.rightPressed = false;
+    clearPendingAccessibleChoice();
     els.pauseBtn.textContent = "Resume";
     return true;
   }
@@ -732,6 +862,7 @@
     }
     if (state.game.modeChangeRestartRequired) {
       state.game.paused = true;
+      state.game.accessibilityQuestionPause = false;
       els.pauseBtn.disabled = true;
       els.pauseBtn.textContent = "Restart Required";
       setDefinitionText("Mode change selected. Start Mission to switch modes, or switch back to continue this mission.");
@@ -763,6 +894,9 @@
     if (!state.game.running || state.game.gameOver) {
       return false;
     }
+    state.game.accessibilityQuestionPause = false;
+    clearPendingAccessibleChoice();
+    state.game.lastPromptAnnouncementKey = "";
     if (state.game.mode === "classic") {
       if (!state.game.activeTerms.length) {
         return false;
@@ -803,14 +937,18 @@
     }
     state.game.paused = !state.game.paused;
     if (state.game.paused) {
+      state.game.accessibilityQuestionPause = false;
       state.game.leftPressed = false;
       state.game.rightPressed = false;
+      clearPendingAccessibleChoice();
+    } else {
+      state.game.accessibilityQuestionPause = false;
     }
     els.pauseBtn.textContent = state.game.paused ? "Resume" : "Pause";
     announce(state.game.paused ? "Game paused." : "Game resumed.");
     if (!state.game.paused) {
       state.game.lastNow = performance.now();
-      els.canvas.focus();
+      focusAccessibleLayerAfterAction();
     }
     renderAccessibleChoices();
   }
@@ -823,7 +961,7 @@
       if (!state.game.currentTarget) {
         return;
       }
-      state.game.score = Math.max(0, state.game.score - ROUND_CONFIG.skipScorePenalty);
+      state.game.score = Math.max(0, state.game.score - getPenaltyAmount(ROUND_CONFIG.skipScorePenalty));
       endCurrentRound("skipped");
       updateHud();
       announce("Wave skipped. New wave starting.");
@@ -834,7 +972,7 @@
     if (!leadSet) {
       return;
     }
-    state.game.score = Math.max(0, state.game.score - ROUND_CONFIG.skipScorePenalty);
+    state.game.score = Math.max(0, state.game.score - getPenaltyAmount(ROUND_CONFIG.skipScorePenalty));
     reinsertTarget(leadSet.target);
     leadSet.evaluated = true;
     leadSet.evaluatedAt = performance.now();
@@ -857,7 +995,7 @@
     const term = state.game.activeTerms.find((item) => item.lane === lane);
     if (!term) {
       createBeam(lane, false);
-      state.game.score = Math.max(0, state.game.score - ROUND_CONFIG.missScorePenalty);
+      state.game.score = Math.max(0, state.game.score - getPenaltyAmount(ROUND_CONFIG.missScorePenalty));
       updateHud();
       announce(`No term in lane ${lane + 1}.`);
       return;
@@ -883,7 +1021,7 @@
       return;
     }
 
-    state.game.score = Math.max(0, state.game.score - ROUND_CONFIG.wrongScorePenalty);
+    state.game.score = Math.max(0, state.game.score - getPenaltyAmount(ROUND_CONFIG.wrongScorePenalty));
     term.state = "wrong_flash";
     term.stateUntil = now + 500;
     updateHud();
@@ -902,7 +1040,7 @@
     }
     if (reason === "breach") {
       const breaches = Math.max(1, Number(options && options.breachCount) || 1);
-      state.game.cityIntegrity = Math.max(0, state.game.cityIntegrity - ROUND_CONFIG.breachIntegrityPenalty * breaches);
+      state.game.cityIntegrity = Math.max(0, state.game.cityIntegrity - getPenaltyAmount(ROUND_CONFIG.breachIntegrityPenalty) * breaches);
     }
     setDefinitionText(reason === "breach" ? "Wave missed. New set incoming..." : "Loading next wave...");
     checkForGameEnd();
@@ -948,12 +1086,14 @@
   function setNextClassicTargetFromActiveTerms() {
     if (!state.game.activeTerms.length) {
       state.game.currentTarget = null;
+      state.game.lastPromptAnnouncementKey = "";
       setDefinitionText("Loading next wave...");
       return;
     }
     const targetIndex = Math.floor(Math.random() * state.game.activeTerms.length);
     state.game.currentTarget = state.game.activeTerms[targetIndex];
     setDefinitionText(state.game.currentTarget.definition);
+    handleNewPromptAnnouncement();
   }
 
   function buildDistractors(target, needed) {
@@ -1050,6 +1190,7 @@
     const leadSet = getLeadBannerSet();
     if (!leadSet) {
       state.game.currentTarget = null;
+      state.game.lastPromptAnnouncementKey = "";
       if (state.game.remainingTargets.length) {
         setDefinitionText("Waiting for next banner set...");
       } else {
@@ -1059,6 +1200,7 @@
     }
     state.game.currentTarget = leadSet.target;
     setDefinitionText(leadSet.definition);
+    handleNewPromptAnnouncement();
   }
 
   function reinsertTarget(target) {
@@ -1093,7 +1235,7 @@
       announce("Correct banner gate.");
     } else {
       set.result = bannerUnderCar ? "wrong" : "miss";
-      const penalty = bannerUnderCar ? ROUND_CONFIG.wrongScorePenalty : ROUND_CONFIG.missScorePenalty;
+      const penalty = bannerUnderCar ? getPenaltyAmount(ROUND_CONFIG.wrongScorePenalty) : getPenaltyAmount(ROUND_CONFIG.missScorePenalty);
       state.game.score = Math.max(0, state.game.score - penalty);
       reinsertTarget(set.target);
       if (bannerUnderCar) {
@@ -1109,7 +1251,7 @@
   function scaledFallSpeed() {
     const selected = els.fallSpeed.value || DEFAULT_FALL_SPEED;
     const multiplier = FALL_SPEED_MULTIPLIER[selected] || FALL_SPEED_MULTIPLIER.normal;
-    return 18 * multiplier;
+    return 18 * multiplier * getAccessibilityProfile().responseSpeedMultiplier;
   }
 
   function scaledBannerSpeed() {
@@ -1129,6 +1271,8 @@
     state.game.gameOver = true;
     state.game.running = false;
     state.game.won = won;
+    state.game.accessibilityQuestionPause = false;
+    state.game.scanEnabled = false;
     state.game.activeTerms = [];
     state.game.currentTarget = null;
     toggleGameButtons(false);
@@ -1215,19 +1359,212 @@
     els.accessibleChoiceList.innerHTML = "";
   }
 
-  function addAccessibleChoiceButton(label, onClick) {
+  function getRemainingPromptCount() {
+    const unresolvedActive = state.game.activeTerms.filter((term) => term.state !== "correct_flash").length;
+    let remaining = state.game.remainingTargets.length + unresolvedActive;
+    if (state.game.mode === "banner_drive") {
+      const unresolvedSets = state.game.activeBannerSets.filter((set) => !set.evaluated).length;
+      remaining = state.game.remainingTargets.length + unresolvedSets;
+    }
+    return Math.max(0, remaining);
+  }
+
+  function buildPromptProgressText() {
+    const total = Math.max(1, state.game.allPairs.length || getRemainingPromptCount());
+    const remaining = getRemainingPromptCount();
+    const current = Math.max(1, total - remaining + 1);
+    return `Question ${current} of ${total}`;
+  }
+
+  function updateScanToggleButton() {
+    if (!els.toggleScanBtn) {
+      return;
+    }
+    const canScan = getAccessibilityProfile().switchScanAvailable;
+    els.toggleScanBtn.classList.toggle("hidden", !canScan);
+    if (!canScan) {
+      els.toggleScanBtn.setAttribute("aria-pressed", "false");
+      els.toggleScanBtn.textContent = "Scan: Off";
+      return;
+    }
+    els.toggleScanBtn.setAttribute("aria-pressed", state.game.scanEnabled ? "true" : "false");
+    els.toggleScanBtn.textContent = state.game.scanEnabled ? "Scan: On" : "Scan: Off";
+  }
+
+  function clearPendingAccessibleChoice() {
+    state.game.pendingAccessibleChoiceKey = "";
+  }
+
+  function focusAccessibleLayerAfterAction() {
+    const profile = getAccessibilityProfile();
+    if (!profile.keepFocusInAccessibleLayer) {
+      els.canvas.focus();
+      return;
+    }
+    const firstChoice = els.accessibleChoiceList
+      ? els.accessibleChoiceList.querySelector("button.accessible-choice-btn")
+      : null;
+    if (firstChoice) {
+      firstChoice.focus();
+      return;
+    }
+    if (els.repeatDefinitionBtn) {
+      els.repeatDefinitionBtn.focus();
+    }
+  }
+
+  function allowInteractionWhileQuestionPaused() {
+    return state.game.paused && state.game.accessibilityQuestionPause;
+  }
+
+  function maybeResumeFromQuestionPause() {
+    if (!state.game.accessibilityQuestionPause) {
+      return;
+    }
+    state.game.accessibilityQuestionPause = false;
+    state.game.paused = false;
+    state.game.lastNow = performance.now();
+    els.pauseBtn.textContent = "Pause";
+  }
+
+  function runAccessibleChoice(choiceKey, label, action) {
+    const profile = getAccessibilityProfile();
+    if (profile.confirmAnswer) {
+      if (state.game.pendingAccessibleChoiceKey !== choiceKey) {
+        state.game.pendingAccessibleChoiceKey = choiceKey;
+        setAccessibleStatus(`Confirm selection: ${label}. Activate the same choice again to submit.`);
+        return;
+      }
+      clearPendingAccessibleChoice();
+    }
+    action();
+    maybeResumeFromQuestionPause();
+    renderAccessibleChoices();
+    focusAccessibleLayerAfterAction();
+  }
+
+  function addAccessibleChoiceButton(label, actionKey, onClick) {
     if (!els.accessibleChoiceList) {
       return;
     }
     const button = document.createElement("button");
     button.type = "button";
+    button.className = "accessible-choice-btn";
+    button.dataset.choiceKey = actionKey;
     button.textContent = label;
-    button.addEventListener("click", onClick);
+    button.addEventListener("click", () => runAccessibleChoice(actionKey, label, onClick));
     els.accessibleChoiceList.appendChild(button);
   }
 
+  function activateAccessibleChoiceByNumber(choiceNumber) {
+    if (!els.accessibleChoiceList || choiceNumber < 1) {
+      return false;
+    }
+    const buttons = els.accessibleChoiceList.querySelectorAll("button.accessible-choice-btn");
+    const target = buttons[choiceNumber - 1];
+    if (!target || target.disabled || target.classList.contains("hidden")) {
+      return false;
+    }
+    target.click();
+    return true;
+  }
+
+  function toggleSwitchScan() {
+    if (!getAccessibilityProfile().switchScanAvailable) {
+      return;
+    }
+    state.game.scanEnabled = !state.game.scanEnabled;
+    state.game.scanIndex = -1;
+    state.game.nextScanAt = performance.now();
+    updateScanToggleButton();
+    announce(state.game.scanEnabled ? "Scan mode enabled." : "Scan mode disabled.");
+  }
+
+  function updateAccessibleScan(now) {
+    if (!state.game.scanEnabled || !getAccessibilityProfile().switchScanAvailable) {
+      return;
+    }
+    if (!state.game.running || state.game.gameOver) {
+      return;
+    }
+    if (state.game.paused && !state.game.accessibilityQuestionPause) {
+      return;
+    }
+    if (!els.accessibleChoiceList) {
+      return;
+    }
+    const buttons = Array.from(els.accessibleChoiceList.querySelectorAll("button.accessible-choice-btn"));
+    if (!buttons.length) {
+      return;
+    }
+    if (now < state.game.nextScanAt) {
+      return;
+    }
+    state.game.scanIndex = (state.game.scanIndex + 1) % buttons.length;
+    state.game.nextScanAt = now + 1100;
+    buttons[state.game.scanIndex].focus();
+  }
+
+  function repeatCurrentDefinition() {
+    const prompt = state.game.currentTarget && state.game.currentTarget.definition
+      ? state.game.currentTarget.definition
+      : els.definitionText.textContent;
+    if (!prompt) {
+      return;
+    }
+    announce(`Definition: ${prompt}`);
+  }
+
+  function announcePromptForAssistiveTech(choiceLabels) {
+    const profile = getAccessibilityProfile();
+    if (!profile.domInteractionEnabled || !state.game.currentTarget) {
+      return;
+    }
+    const progress = buildPromptProgressText();
+    const promptKey = `${state.game.mode}|${state.game.currentTarget.term}|${progress}|${choiceLabels.join("|")}`;
+    if (promptKey === state.game.lastPromptAnnouncementKey) {
+      return;
+    }
+    state.game.lastPromptAnnouncementKey = promptKey;
+    const choiceText = choiceLabels.length ? ` Choices: ${choiceLabels.join(", ")}.` : "";
+    announce(`${progress}. ${state.game.currentTarget.definition}.${choiceText}`);
+    if (profile.autoPauseOnNewPrompt && state.game.running && !state.game.gameOver) {
+      state.game.paused = true;
+      state.game.accessibilityQuestionPause = true;
+      state.game.leftPressed = false;
+      state.game.rightPressed = false;
+      els.pauseBtn.textContent = "Resume";
+    }
+  }
+
+  function handleNewPromptAnnouncement() {
+    if (!state.game.currentTarget) {
+      return;
+    }
+    if (state.game.mode === "classic") {
+      const labels = state.game.activeTerms
+        .filter((term) => term.state === "active")
+        .sort((a, b) => a.lane - b.lane)
+        .map((term) => `Lane ${term.lane + 1} ${term.term}`);
+      announcePromptForAssistiveTech(labels);
+      return;
+    }
+    const leadSet = getLeadBannerSet();
+    if (!leadSet) {
+      return;
+    }
+    const labels = leadSet.banners
+      .slice()
+      .sort((a, b) => a.left - b.left)
+      .map((banner) => `Lane ${banner.lane + 1} ${banner.term}`);
+    announcePromptForAssistiveTech(labels);
+  }
+
   function chooseBannerFromAccessibleLayer(set, bannerIndex) {
-    if (!state.game.running || state.game.gameOver || state.game.paused || state.game.mode !== "banner_drive") {
+    if (!state.game.running || state.game.gameOver || state.game.mode !== "banner_drive") {
+      return;
+    }
+    if (state.game.paused && !allowInteractionWhileQuestionPaused()) {
       return;
     }
     if (!set || set.evaluated || !Number.isInteger(bannerIndex) || bannerIndex < 0 || bannerIndex >= set.banners.length) {
@@ -1242,10 +1579,18 @@
   }
 
   function renderAccessibleChoices() {
-    if (!els.accessibleStatus || !els.accessibleChoiceList) {
+    if (!els.accessibleControls || !els.accessibleStatus || !els.accessibleChoiceList) {
       return;
     }
+    const profile = getAccessibilityProfile();
+    els.accessibleControls.classList.toggle("hidden", !profile.domInteractionEnabled);
+    if (!profile.domInteractionEnabled) {
+      return;
+    }
+
+    updateScanToggleButton();
     clearAccessibleChoices();
+    clearPendingAccessibleChoice();
 
     if (state.game.gameOver) {
       setAccessibleStatus("Mission ended. Press Start Mission to play again.");
@@ -1259,7 +1604,7 @@
       setAccessibleStatus("Mode changed. Start Mission to switch modes, or switch back to the original mode to unlock Resume.");
       return;
     }
-    if (state.game.paused) {
+    if (state.game.paused && !allowInteractionWhileQuestionPaused()) {
       setAccessibleStatus("Game is paused. Press Resume to continue interactive choices.");
       return;
     }
@@ -1272,15 +1617,23 @@
         setAccessibleStatus("Waiting for next wave...");
         return;
       }
-      setAccessibleStatus("Term Invaders: choose a lane option to fire immediately.");
+      setAccessibleStatus(`${buildPromptProgressText()}. Term Invaders: choose a lane option.`);
       activeTerms.forEach((term) => {
-        addAccessibleChoiceButton(`Lane ${term.lane + 1}: ${term.term}`, () => {
-          if (!state.game.running || state.game.paused || state.game.gameOver || state.game.mode !== "classic") {
+        const actionKey = `classic-${term.id}`;
+        const label = `Lane ${term.lane + 1}: ${term.term}`;
+        addAccessibleChoiceButton(label, actionKey, () => {
+          if (!state.game.running || state.game.gameOver || state.game.mode !== "classic") {
             return;
+          }
+          if (state.game.paused && !allowInteractionWhileQuestionPaused()) {
+            return;
+          }
+          if (state.game.paused && allowInteractionWhileQuestionPaused()) {
+            state.game.paused = false;
+            state.game.lastNow = performance.now();
           }
           selectLane(term.lane);
           fireAtSelectedLane();
-          els.canvas.focus();
         });
       });
       return;
@@ -1291,15 +1644,14 @@
       setAccessibleStatus(state.game.remainingTargets.length ? "Waiting for next banner set..." : "No remaining definitions.");
       return;
     }
-    setAccessibleStatus("Banner Drive: choose the banner that matches the definition.");
+    setAccessibleStatus(`${buildPromptProgressText()}. Banner Drive: choose the matching banner.`);
     leadSet.banners
       .map((banner, index) => ({ banner, index }))
       .sort((a, b) => a.banner.left - b.banner.left)
       .forEach(({ banner, index }) => {
-        addAccessibleChoiceButton(`Lane ${banner.lane + 1}: ${banner.term}`, () => {
-          chooseBannerFromAccessibleLayer(leadSet, index);
-          els.canvas.focus();
-        });
+        const actionKey = `banner-${leadSet.id}-${index}`;
+        const label = `Lane ${banner.lane + 1}: ${banner.term}`;
+        addAccessibleChoiceButton(label, actionKey, () => chooseBannerFromAccessibleLayer(leadSet, index));
       });
   }
 
@@ -1362,6 +1714,7 @@
     if (state.game.running && !state.game.paused && !state.game.gameOver) {
       updateGame(now, deltaMs);
     }
+    updateAccessibleScan(now);
     drawGame(now);
     requestAnimationFrame(loop);
   }
@@ -1487,6 +1840,12 @@
   }
 
   function drawArenaBackground() {
+    const profile = getAccessibilityProfile();
+    if (profile.simplifiedVisuals) {
+      ctx.fillStyle = "#07131f";
+      ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+      return;
+    }
     const gradient = ctx.createLinearGradient(0, 0, 0, CANVAS_HEIGHT);
     gradient.addColorStop(0, "#050d18");
     gradient.addColorStop(0.5, "#0d1f33");
@@ -1503,14 +1862,15 @@
   }
 
   function drawBannerRoadMarks() {
+    const profile = getAccessibilityProfile();
     ctx.save();
-    ctx.fillStyle = "rgba(7, 16, 30, 0.55)";
+    ctx.fillStyle = profile.simplifiedVisuals ? "rgba(9, 20, 36, 0.88)" : "rgba(7, 16, 30, 0.55)";
     ctx.fillRect(0, 45, CANVAS_WIDTH, CANVAS_HEIGHT - 90);
-    ctx.strokeStyle = "rgba(90,153,210,0.35)";
-    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = profile.strongGuides ? "rgba(170,224,255,0.8)" : "rgba(90,153,210,0.35)";
+    ctx.lineWidth = profile.strongGuides ? 3 : 1.5;
     laneCenters.forEach((center, index) => {
       if (index > 0) {
-        ctx.setLineDash([10, 10]);
+        ctx.setLineDash(profile.strongGuides ? [14, 10] : [10, 10]);
         ctx.beginPath();
         ctx.moveTo((laneCenters[index - 1] + center) / 2, 45);
         ctx.lineTo((laneCenters[index - 1] + center) / 2, CANVAS_HEIGHT - 20);
@@ -1529,16 +1889,22 @@
   }
 
   function drawLaneHighlights() {
+    const profile = getAccessibilityProfile();
     const center = laneCenters[state.game.selectedLane];
-    ctx.fillStyle = "rgba(0, 225, 143, 0.11)";
+    ctx.fillStyle = profile.strongGuides ? "rgba(245, 255, 141, 0.2)" : "rgba(0, 225, 143, 0.11)";
     ctx.fillRect(center - 130, 40, 260, CITY_LINE_Y - 25);
   }
 
   function drawLaneGuides() {
+    const profile = getAccessibilityProfile();
     ctx.save();
     laneCenters.forEach((center, lane) => {
-      ctx.strokeStyle = lane === state.game.selectedLane ? "rgba(136,255,225,0.8)" : "rgba(90,153,210,0.35)";
-      ctx.lineWidth = lane === state.game.selectedLane ? 3 : 1.5;
+      ctx.strokeStyle = lane === state.game.selectedLane
+        ? (profile.strongGuides ? "rgba(255,255,156,0.98)" : "rgba(136,255,225,0.8)")
+        : (profile.strongGuides ? "rgba(170,224,255,0.78)" : "rgba(90,153,210,0.35)");
+      ctx.lineWidth = lane === state.game.selectedLane
+        ? (profile.strongGuides ? 5 : 3)
+        : (profile.strongGuides ? 2.6 : 1.5);
       ctx.beginPath();
       ctx.moveTo(center, 45);
       ctx.lineTo(center, CITY_LINE_Y - 8);
@@ -1792,6 +2158,9 @@
     if (state.game.modeChangeRestartRequired) {
       ctx.fillText("Mode changed. Press Start Mission to switch modes.", CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 18);
       ctx.fillText("Or switch back to current mode to unlock Resume.", CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 48);
+    } else if (state.game.accessibilityQuestionPause) {
+      ctx.fillText("Accessibility pause: choose an answer in Accessible Interaction.", CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 18);
+      ctx.fillText("Or press P/Resume to continue motion without answering.", CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 48);
     } else {
       ctx.fillText("Press P or Resume to continue", CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 28);
     }
@@ -1851,7 +2220,14 @@
       return false;
     }
     const tag = target.tagName.toLowerCase();
-    return tag === "input" || tag === "textarea" || tag === "select" || tag === "button";
+    return tag === "input" || tag === "textarea" || tag === "select";
+  }
+
+  function isButtonElement(target) {
+    if (!(target instanceof HTMLElement)) {
+      return false;
+    }
+    return target.tagName.toLowerCase() === "button";
   }
 
   function cryptoRandomId() {
@@ -1912,6 +2288,7 @@
       gameMode: els.gameMode.value || DEFAULT_GAME_MODE,
       choicesPerRound: Number(els.choicesPerRound.value) || DEFAULT_CHOICES_PER_ROUND,
       fallSpeed: els.fallSpeed.value || DEFAULT_FALL_SPEED,
+      accessibilityMode: getAccessibilityMode(),
       reduceMotion: !!els.reduceMotion.checked,
       highContrast: !!els.highContrast.checked,
       initials: sanitizeInitials(els.initials.value)
