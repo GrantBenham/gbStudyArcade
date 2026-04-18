@@ -244,8 +244,18 @@
     els.startBtn.addEventListener("click", startMission);
     els.pauseBtn.addEventListener("click", togglePause);
     els.skipBtn.addEventListener("click", skipDefinition);
-    els.leftBtn.addEventListener("click", moveLeftControl);
-    els.rightBtn.addEventListener("click", moveRightControl);
+    els.leftBtn.addEventListener("click", () => {
+      if (state.game.mode === "classic") {
+        moveLeftControl(false);
+      }
+    });
+    els.rightBtn.addEventListener("click", () => {
+      if (state.game.mode === "classic") {
+        moveRightControl(false);
+      }
+    });
+    bindDriveButtonHold(els.leftBtn, "left");
+    bindDriveButtonHold(els.rightBtn, "right");
     els.fireBtn.addEventListener("click", fireAtSelectedLane);
     els.clearScoresBtn.addEventListener("click", clearScores);
     els.canvas.addEventListener("click", handleCanvasClick);
@@ -559,7 +569,7 @@
       selectLane(Math.max(0, state.game.selectedLane - 1));
       return;
     }
-    if (fromKeyboard) {
+    if (fromKeyboard === true) {
       state.game.leftPressed = true;
       return;
     }
@@ -578,7 +588,7 @@
       selectLane(Math.min(LANE_COUNT - 1, state.game.selectedLane + 1));
       return;
     }
-    if (fromKeyboard) {
+    if (fromKeyboard === true) {
       state.game.rightPressed = true;
       return;
     }
@@ -587,6 +597,48 @@
       state.game.car.vx = 0;
       state.game.car.x = Math.min(CANVAS_WIDTH - state.game.car.width / 2 - 12, state.game.car.x);
     }
+  }
+
+  function bindDriveButtonHold(button, direction) {
+    button.addEventListener("pointerdown", (event) => {
+      if (!state.game.running || state.game.gameOver || state.game.paused || state.game.mode !== "banner_drive") {
+        return;
+      }
+      event.preventDefault();
+      if (typeof button.setPointerCapture === "function") {
+        try {
+          button.setPointerCapture(event.pointerId);
+        } catch {
+          // No-op when capture is unavailable.
+        }
+      }
+      if (direction === "left") {
+        state.game.leftPressed = true;
+        state.game.rightPressed = false;
+      } else {
+        state.game.rightPressed = true;
+        state.game.leftPressed = false;
+      }
+    });
+
+    const stopHold = (event) => {
+      if (direction === "left") {
+        state.game.leftPressed = false;
+      } else {
+        state.game.rightPressed = false;
+      }
+      if (event && typeof button.releasePointerCapture === "function") {
+        try {
+          button.releasePointerCapture(event.pointerId);
+        } catch {
+          // No-op when capture is unavailable.
+        }
+      }
+    };
+
+    button.addEventListener("pointerup", stopHold);
+    button.addEventListener("pointercancel", stopHold);
+    button.addEventListener("lostpointercapture", stopHold);
   }
 
   function startMission() {
@@ -662,6 +714,8 @@
       return false;
     }
     state.game.paused = true;
+    state.game.leftPressed = false;
+    state.game.rightPressed = false;
     els.pauseBtn.textContent = "Resume";
     return true;
   }
@@ -741,6 +795,10 @@
       return;
     }
     state.game.paused = !state.game.paused;
+    if (state.game.paused) {
+      state.game.leftPressed = false;
+      state.game.rightPressed = false;
+    }
     els.pauseBtn.textContent = state.game.paused ? "Resume" : "Pause";
     announce(state.game.paused ? "Game paused." : "Game resumed.");
     if (!state.game.paused) {
