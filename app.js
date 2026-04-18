@@ -1507,6 +1507,18 @@
     return `${Math.ceil(ms / 1000)}s`;
   }
 
+  function updateMissionTimerDisplay() {
+    if (!els.missionTimerText) {
+      return;
+    }
+    const round = state.game.missionRound;
+    if (!isMissionTimed() || !round || !Number.isFinite(round.timeLeftMs)) {
+      els.missionTimerText.textContent = "Untimed";
+      return;
+    }
+    els.missionTimerText.textContent = formatMissionTime(round.timeLeftMs);
+  }
+
   function repeatCurrentDefinition() {
     const prompt = state.game.currentTarget && state.game.currentTarget.definition
       ? state.game.currentTarget.definition
@@ -1903,8 +1915,11 @@
     if (!isMissionTimed() || !Number.isFinite(round.timeLeftMs)) {
       return;
     }
+    const previousDisplay = formatMissionTime(round.timeLeftMs);
     round.timeLeftMs = Math.max(0, round.timeLeftMs - deltaMs);
-    renderMissionAccessibleArena();
+    if (formatMissionTime(round.timeLeftMs) !== previousDisplay) {
+      updateMissionTimerDisplay();
+    }
     if (round.timeLeftMs <= 0) {
       handleMissionAccessibleTimeout();
     }
