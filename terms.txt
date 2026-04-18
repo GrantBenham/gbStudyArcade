@@ -1,0 +1,474 @@
+# Cellular Biology
+Ribosomes: Structures that synthesize new protein molecules
+Endoplasmic reticulum: A network of thin tubes that transport newly synthesized proteins to other locations
+Mitochondrion: Performs metabolic activities, providing the energy that the cell use for all activities
+Motor neuron: Receives excitation through its dendrites and conducts impulses along its axon to a muscle
+Sensory neuron: is specialized at one end to be highly sensitive to a particular type of stimulation
+Presynaptic terminal: swellings at the ends of axons
+Functional explanation: Describes why a structure or behavior evolved as it did
+Neurons: Receive information and transmit it to other cells
+Membrane: A structure that separates the inside of the cell from the outside environment
+Nucleus: Structure that contains the chromosomes
+Axon: conveys an impulse to other neurons, an organ, or a muscle
+Cell body or soma: contains the nucleus, ribosomes, and mitochondria
+Dendritic spines: short outgrowths that increase the surface area available for synapses
+Dendrites: are branching fibers that get narrower near their ends
+Nodes of Ranvier: interruptions in the myelin sheaths
+Myelin sheath: an insulating material that covers axons
+Afferent axon: brings information into a structure
+Efferent axon: carries information away from a structure
+Interneuron or intrinsic neuron: a cell's dendrites and axon are entirely contained within a single structure
+Glia: a Greek word meaning "glue"
+Astrocytes: star-shaped glia
+Microglia: act as part of the immune system, removing viruses and fungi from the brain
+Oligodendrocytes and Schwann cells: build the myelin sheaths that surround and insulate certain vertebrate axons
+Radial glia: guide the migration of neurons and their axons and dendrites during embryonic development
+Blood–brain barrier: the mechanism that excludes most chemicals from the vertebrate brain
+Electrical gradient, also known as polarization: a difference in electrical charge between the inside and outside of the cell
+Resting potential: The inside of the membrane has a slight negative charge compared to the outside, mainly because of negatively charged proteins inside the cell. This difference in voltage is called the resting potential
+Selectively permeable: the cell membrane is selectively permeable, letting some chemicals pass more freely than others
+Sodium–potassium pump: a protein complex that repeatedly transports three sodium ions out of the cell while drawing two potassium ions in
+Concentration gradient: the difference in distribution of ions across the membrane
+Action potentials: when an axon sends a message
+Hyperpolarization: an increase the negative charge of a neuron
+Threshold: the point at which the cell membrane opens
+All-or-none law: the amplitude and velocity of an action potential are independent of the intensity of the stimulus that initiated it, provided that the stimulus reaches the threshold
+Voltage-gated channels: open or close depending on the voltage across the membrane
+Local anesthetic: drugs, such as Novocain and Xylocaine, attach to the sodium channels of the membrane, preventing sodium ions from entering
+Propagation of the action potential: describes the transmission of an action potential down an axon
+Absolute refractory period: the time when the membrane cannot produce an action potential, regardless of the stimulation
+Relative refractory period: when a stronger-than-usual stimulus is necessary to initiate an action potential
+Saltatory conduction: from the Latin word saltare, meaning "to jump"
+Biological psychology: The study of the physiological, evolutionary, and developmental mechanisms of behavior and experience
+Dualism: The idea that minds are one type of substance and matter is another
+Mind–body problem: How and why certain types of brain activity are conscious
+Monism: Mental activity and certain types of brain activity are inseparable
+Physiological explanation: Relates a behavior to the activity of the brain and other organs
+Ontogenetic explanation: Describes how something develops
+Evolutionary explanation: Reconstructs the evolutionary history of a structure or behavior
+
+# Synapses
+Excitatory postsynaptic potential (EPSP): Graded depolarization
+Inhibitory postsynaptic potential (IPSP): Temporary hyperpolarization of a membrane
+Postsynaptic neuron: Neuron that receives transmission from another neuron
+Presynaptic neuron: Neuron that delivers transmission to another neuron
+Reflex arc: A circuit from sensory neuron to muscle response
+Reflexes: Automatic muscular responses to stimuli
+Spatial summation: Combination of effects of activity from two or more synapses onto a single neuron
+Spontaneous firing rate: A periodic production of action potentials even without synaptic input
+Synapse: A specialized gap as a point of communication between two neurons
+Temporal summation: A cumulative effect of repeated stimuli within a brief time
+Acetylcholine: a chemical similar to an amino acid, except that it includes an N(CH3)3 group instead of an NH2, group
+Amino acids: acids containing an amine group
+Amphetamine: a drug that blocks reuptake of dopamine and other neurotransmitters
+Anterior pituitary: portion of the pituitary gland, composed of glandular tissue
+Autoreceptors: receptors that respond to the released transmitter by inhibiting further synthesis and release
+Cannabinoids: chemicals related to THC
+Catecholamines: compounds that contain a catechol and an amine group
+Cocaine: a drug that blocks reuptake of dopamine
+Endocrine glands: hormone-producing glands
+Exocytosis: a release of neurotransmitter from the presynaptic neuron into the synaptic cleft
+G protein: a protein coupled to guanosine triphosphate (GTP), an energy-storing molecule
+Gap junction: a direct contact of one neuron with another, enabling electrical transmission
+Gases: one of the categories of neurotransmitters, including nitric oxide and possibly others
+Hallucinogenic drugs: drugs that distort perception
+Hormone: chemical that is secreted by cells in one part of the body and conveyed by the blood to influence other cells
+Ionotropic effects: synaptic effects that depend on the rapid opening of some kind of gate in the membrane
+Ligand-gated channels: when the neurotransmitter attaches, it opens a channel
+Metabotropic effects: a sequence of metabolic reactions that produce slow and long-lasting effects at a synapse
+Methylphenidate: stimulant drug prescribed for ADHD that increases the stimulation of dopamine synapses by blocking the reuptake of dopamine by the presynaptic neuron
+Monoamines: chemicals formed by a change in certain amino acids
+Neuromodulators: chains of amino acids
+Neuropeptides: chains of amino acids
+Neurotransmitters: chemicals released by neurons that affect other neurons
+Nitric oxide: a gas released by many small local neurons
+Opiate drugs: drugs derived from the opium poppy
+Oxytocin: hormone released by posterior pituitary; important for sexual and parental behaviors
+Pituitary gland: an endocrine gland attached to the base of the hypothalamus
+Posterior pituitary: portion of the pituitary gland, which releases hormones synthesized by the hypothalamus
+Purines: a category of chemicals including adenosine and several of its derivatives
+Releasing hormones: stimulate or inhibit the release of other hormones
+Reuptake: reabsorption of a neurotransmitter by the presynaptic terminal
+Second messenger: a chemical that, when activated by a neurotransmitter, initiates communication to many areas within the neuron
+Synaptic cleft: the space between the presynaptic and postsynaptic neurons
+Transmitter-gated channels: ion channel that opens temporarily when a neurotransmitter binds to it
+Transporters: special membrane protein where reuptake occurs in the neurotransmitter binds to it
+Vasopressin: (antidiuretic hormone) hormone released by posterior pituitary; raises blood pressure and enables kidneys to conserve water
+Vesicles: tiny nearly spherical packets filled with neurotransmitter molecules
+
+# Anatomy
+Amygdala: Temporal lobe structure important for evaluating emotional information
+Autonomic nervous system: Part of the peripheral nervous system that controls the heart, intestines, and other organs
+Basal ganglia: A group of subcortical forebrain structures lateral to the thalamus
+Brainstem: The medulla, pons, midbrain, and central structure of the forebrain
+Central nervous system (CNS): The brain and the spinal cord
+Cerebellum: Highly folded hindbrain structure that is important for behaviors that depend on accurate timing
+Cerebrospinal fluid (CSF): a clear fluid similar to blood plasma produced by choroid plexus in the brain ventricles
+Cranial nerves: nerves that control sensations from the head, muscle movements in the head, and much of the parasympathetic output to the organs
+Dorsal: located toward the back
+Dorsal root ganglia: clusters of sensory neurons outside the spinal cord
+Enteric nervous system: controls the digestive system
+Forebrain: most anterior part of the brain; consists of two cerebral hemispheres
+Gray matter: areas of the nervous system that are densely packed with cell bodies and dendrites
+Hindbrain: the posterior part of the brain
+Hippocampus: A large structure located toward the posterior of the forebrain, between the thalamus and the cerebral cortex
+Hypothalamus: Small area near the base of the brain, ventral to the thalamus
+Inferior colliculus: swelling on the surface of the tectum that contributes to hearing
+Medulla: hindbrain structure located just above the spinal cord; could be regarded as an enlarged extension of the spinal cord
+Meninges: membranes that surround the brain and spinal cord
+Midbrain: middle part of the brain
+Neuroanatomy: the anatomy of the nervous system
+Nucleus basalis: a forebrain structure that lies on the ventral surface; receives input from the hypothalamus and basal ganglia; sends axons to areas in the cerebral cortex
+Parasympathetic nervous system: system of nerves that facilitate vegetative, nonemergency responses by the body's organs
+Peripheral nervous system (PNS): nerves outside the brain and spinal cord
+Pituitary gland: an endocrine gland attached to the base of the hypothalamus
+Pons: hindbrain structure that lies anterior and ventral to the medulla
+Somatic nervous system: part of the PNS that consists of the axons conveying messages from the sense organs to the CNS and from the CNS to the muscles
+Spinal cord: part of the CNS; it communicates with all the sense organs and muscles except those of the head
+Substantia nigra: a midbrain structure that gives rise to a pathway releasing dopamine
+Superior colliculus: swelling on either side of the tectum; important to visual processing
+Sympathetic nervous system: a network of nerves that prepare the organs for vigorous activity
+Tectum: roof of the midbrain
+Tegmentum: intermediate level of the midbrain
+Thalamus: a pair of structures in the center of the forebrain
+Ventral: toward the stomach
+Ventricles: four fluid-filled cavities within the brain
+White matter: area of the nervous system consisting of myelinated axons
+Anterior commissure: bundle of axons that connects the two hemispheres of the cerebral cortex
+Binding problem: question of how various brain areas produce a perception of a single object
+Central sulcus: one of the deepest grooves in the surface of the cerebral cortex
+Cerebral cortex: layers of cells on the outer surface of the cerebral hemisphere of the forebrain
+Columns: collection of cells perpendicular to the surface of the cortex and to its laminae
+Corpus callosum: bundle of axons that connects the two hemispheres of the cerebral cortex
+Default network: areas that dominate activity when you don't need to concentrate on anything in particular
+Frontal lobe: section of cerebral cortex that extends from the central sulcus to the anterior limit of the brain
+Human Connectome Project: an effort to map all the long-distance connections
+Klüver-Bucy syndrome: a behavioral disorder caused by temporal lobe damage
+Laminae: layer of cell bodies that are parallel to the surface of the cerebral cortex and separated from each other by layers of fibers
+Occipital lobe: posterior section of the cerebral cortex
+Parietal lobe: section of the cerebral cortex between the occipital lobe and the central sulcus
+Postcentral gyrus: area just posterior to the central gyrus; primary receptor site for touch and other body sensations
+Precentral gyrus: the posterior portion of the frontal lobe of the cortex, specialized for control of movement
+Prefrontal cortex: anterior portion of the frontal lobe, which responds mostly to the sensory stimuli that signal the need for a movement
+Prefrontal lobotomy: surgical disconnection of the prefrontal cortex from the rest of the brain
+Primates: order of mammals that includes monkeys, apes, and humans
+Temporal lobe: the lateral portion of each hemisphere, near the temples
+Temporoparietal junction: area where the parietal lobe and the temporal lobe meet
+Ablation: removal of a brain area, generally with a surgical knife
+Computerized axial tomography (CT or CAT scan): method of visualizing a living brain by injecting a dye into the blood and placing a person's head into a CT scanner
+Electroencephalograph (EEG): a device that records electrical activity of the brain through electrodes attached to the scalp
+Evoked potentials: electrical recordings on the scalp from brain activity in response to a stimulus
+Evoked responses: electrical recordings on the scalp from brain activity in response to a stimulus
+Functional magnetic resonance imaging (fMRI): a modified version of MRI that measures energies based on hemoglobin instead of water; determines the brain areas receiving the greatest supply of blood and using the most oxygen
+Lesion: damage to a structure
+Magnetic resonance imaging (MRI): method of imaging a living brain by using a magnetic field and a radio frequency field to make atoms with odd atomic weights all rotate in the same direction and then removing those fields and measuring the energy that the atoms release
+Magnetoencephalograph (MEG): a device that measures the faint magnetic fields generated by brain activity
+Optogenetics: method of implanting a receptor into a neuron and stimulating it with light, to investigate the functions of a particular type of neuron
+Phrenology: a process of relating skull anatomy to behavior
+Positron-emission tomography (PET): method of mapping activity in a living brain by recording the emission of radioactivity from injected chemicals
+Stereotaxic instrument: a device for the precise placement of electrodes in the brain
+Transcranial magnetic stimulation (TMS): the application of an intense magnetic field to a portion of the scalp, temporarily inactivating neurons below the magnet
+
+# Genetics
+Altruistic behavior: action that benefits someone other than the actor
+Apoptosis: a programmed mechanism of cell death in which the neuron kills itself
+Artificial selection: choosing individuals with a desired trait and make them the parents of the next generation
+Autosomal genes: genes located on autosomal chromosomes
+Cerebrovascular accident: temporary interruption of normal blood flow to a brain area during a stroke
+Chromosomes: strands of genes
+Closed head injury: a sharp blow to the head that does not puncture the brain
+Collateral sprouts: new branches that take over vacant synapses when a cell loses input from an axon
+Deafferent: loss of sensory or afferent input
+Denervation supersensitivity: After learning strengthens one set of synapses, other synapses weaken, while if a certain set of synapses becomes inactive, the remaining synapses become more responsive, more easily stimulated
+Deoxyribonucleic acid (DNA): a double-stranded chemical
+Diaschisis: the decreased activity of surviving neurons because of damage to other neurons
+Differentiates: happens when a cell begins to form its dendrites, axon, and synapses
+Dizygotic twins: from two eggs
+Dominant gene: exerts a strong effect in either the homozygous or heterozygous condition
+Edema: accumulation of fluid
+Epigenetics: field that deals with changes in gene expression
+Evolution: a change over generations in the frequencies of various genes in a population
+Evolutionary psychology: the study of how behaviors evolved
+Far transfer: teaching something challenging in the hope that students will get smarter in other ways, too
+Fetal alcohol syndrome: a condition marked by hyperactivity, impulsiveness, attention deficits, motor problems, heart defects, facial abnormalities, and sometimes thinning of the cerebral cortex
+Fitness: the number of copies of one's genes that endure in later generations
+Focal hand dystonia: a condition in which one or more fingers may go into constant contraction and moving one finger without moving another becomes more difficult
+Genes: units of heredity that maintain their identity from one generation to the next
+Group selection: the idea that altruistic groups thrive better than less cooperative ones
+Hemorrhage: a type of stroke the resulting from a ruptured artery
+Heritability: characteristic in which the variations depend largely on genetic differences
+Heterozygous: having an unmatched pair of genes on the two chromosomes
+Histones: proteins that bind DNA into a shape that is like string wound around balls
+Homozygous: having an identical pair of genes on the two chromosomes
+Ischemia: a type of stroke that results from a blood clot or other obstruction in an artery
+Kin selection: selection for a gene that benefits the individual's relatives
+Lamarckian evolution: evolution through the inheritance of acquired characteristics
+Migrate: move
+Monozygotic twins: from one egg
+Mutation: a heritable change in a DNA molecule
+Myelination: the process by which glia produce the insulating fatty sheaths that accelerate transmission in many vertebrate axons
+Nerve growth factor (NGF): a protein that promotes the survival and growth of the axon
+Neural Darwinism: the principle that we start with more neurons and synapses than we can keep, and then a selection process keeps the most successful combinations of synapses and rejects others
+Neurotrophin: a protein that promotes the survival and growth of the axon
+Phantom limb: a continuing sensation of an amputated body part
+Phenylketonuria (PKU): a genetic inability to metabolize the amino acid phenylalanine
+Proliferation: the production of new cells
+Recessive gene: exerts its effects only in the homozygous condition
+Reciprocal altruism: the idea that individuals help those who will probably return the favor
+Ribonucleic acid (RNA): a single-stranded chemical
+Sex-limited genes: present in both sexes but active mainly in one sex
+Sex-linked genes: the genes on the sex chromosomes (designated X and Y in mammals)
+Stem cells: cells that do not migrate
+Stroke: temporary interruption of normal blood flow to a brain area
+Synaptogenesis: the formation of synapses
+Tissue plasminogen activator (tPA): a drug that breaks up blood clots
+
+# Reproductive
+Activating effects: temporary effect of a hormone, which occurs at any time in life while the hormone is present
+Androgens: testes-produced hormones that are more abundant in males
+Estradiol: a hormone in the estrogen family
+Estrogens: family of hormones that are more abundant in females
+Follicle-stimulating hormone (FSH): chemical released from the anterior pituitary; promotes the growth of a follicle in the ovary
+Impotence: the inability to have an erection
+Klinefelter syndrome: characterized by an XXY pattern, or less commonly XXYY or XXXY
+Luteinizing hormone: hormone released from the anterior pituitary that causes the follicle to release an ovum
+Menstrual cycle: a periodic variation in hormones and fertility over the course of about 28 days
+Müllerian ducts: embryonic structures that can develop into a female's oviducts, uterus, and upper vagina
+Organizing effects: long-lasting effects of a hormone that are present during a sensitive period early in development
+Ovaries: the female's egg-producing organs
+Oxytocin: hormone released by posterior pituitary; important for sexual and parental behaviors
+Preovulatory period: the days of the menstrual cycle when estradiol levels are highest
+Progesterone: steroid hormone that prepares the uterus for the implantation of a fertilized ovum and promotes the maintenance of pregnancy
+Sensitive period: time early in development when experiences have a particularly strong and enduring influence
+Sexual selection: tendency for a gene to spread in the population if it makes individuals more appealing to the opposite sex
+SRY gene: the sex-determining region on the Y chromosome
+Steroid hormones: hormones that contain four carbon rings
+Supraoptic nucleus: part of the hypothalamus that controls the release rate of vasopressin
+Testes: sperm-producing organs
+Testosterone: an androgen chemical
+Turner syndrome: characterized by an XO pattern – an X chromosome and no second sex chromosome, or just part of a second X chromosome, or one X in some cells and two Xs in others
+Wolffian ducts: precursors to male internal structures
+Androgen insensitivity: condition in which individuals with an XY chromosome pattern have the genital appearance of a female
+Congenital adrenal hyperplasia: the overdevelopment of the adrenal glands from birth
+Gender identity: the gender that a person considers himself or herself to be
+Intersex person: a person whose sexual development is intermediate or ambiguous
+Testicular feminization: condition in which individuals with an XY chromosome pattern have the genital appearance of a female
+Transgender: people are those who affirm that they were "born in the wrong body," that although their anatomy appears male or female, they clearly identify with the other gender
+
+# Learning
+Alzheimer's disease: condition characterized by memory loss, confusion, depression, restlessness, hallucinations, delusions, sleeplessness, and loss of appetite
+Amnesia: memory loss
+β-amyloid: a protein that accumulates to higher than normal levels in the brains of people with Alzheimer's disease
+APOE: a gene that makes a protein that contributes to many functions, including lipid metabolism and control of the blood-brain barrier
+Classical conditioning: type of conditioning produced by the pairing of two stimuli, one of which evokes an automatic response
+Conditioned response (CR): response evoked by a conditioned stimulus after it has been paired with an unconditioned response
+Conditioned stimulus (CS): stimulus that evokes a particular response only after it has been paired with an unconditioned stimulus
+Consolidate: to strengthen a memory and make it more long-lasting
+Delayed response task: assignment in which an animal must respond on the basis of a signal that it remembers but that is no longer present
+Engram: physical representation of what has been learned
+Equipotentiality: a concept that all parts of the cortex contribute equally to complex behaviors; any part of the cortex can substitute for any other
+Infant amnesia: tendency to forget the experiences of early childhood
+Instrumental conditioning: a type of condition in which reinforcement or punishment changes the future probabilities of a given behavior
+Lateral interpositus nucleus (LIP): a nucleus of the cerebellum that is essential for certain conditioned responses
+Long-term memory: memory of events that occurred further back in time
+Mass action: concept that the cortex works as a whole and the more cortex, the better
+Punishment: an event that suppresses the frequency of the preceding response
+Reinforcer: any event that increases the future probability of the preceding response
+Short-term memory: memory of events that have just occurred
+Tau protein: part of the intracellular support structure of axons
+Unconditioned response (UCR): response automatically evoked by an unconditioned stimulus
+Unconditioned stimulus (UCS): stimulus that automatically evokes an unconditioned response
+Working memory: a storage of memory while one is working with it
+Anterograde amnesia: an inability to form memories for events that happened after brain damage
+Declarative memory: deliberate recall of information that one recognizes as a memory
+Delayed matching-to-sample task: task in which an animal sees a sample object and then after a delay must choose an object that matches the sample
+Delayed nonmatching-to-sample task: task in which an animal sees an object and then after a delay must choose an object that does not match the sample
+Episodic memory: memories of single personal events
+Explicit memory: deliberate recall of information that one recognizes as a memory
+Grid cells: entorhinal cortex cells that respond when an animal is in any of a number of places arranged in a hexagonal grid pattern
+Implicit memory: an influence of experience on behavior, even if the influence is not recognized
+Morris water maze: a procedure used to test for spatial memory in nonhuman
+Place cells: hippocampal neurons that respond most strongly when an animal is in a particular place and headed in a particular direction
+Probabilistic learning: learning what will probably happen under certain circumstances
+Procedural memory: the development of motor skills and habits; a special kind of implicit memory
+Radial maze: an apparatus used to test spatial memory in nonhuman
+Retrograde amnesia: a loss of memory for events that occurred before brain damage
+Semantic dementia: a loss of semantic memory
+Semantic memories: memories of factual information
+Sharp-wave ripples: used to reactivate a memory by bouncing messages back and forth to the hippocampus and cerebral cortex
+Striatum: forebrain structure composed of the caudate nucleus and putamen, which are important for certain aspects of movement
+Time cells: hippocampal neurons that respond most strongly at a particular point within a sequence of times
+AMPA receptor: a glutamate receptor that can respond to α-amino-3-hydroxy-5-methyl-4-isoxazolepropionic acid (AMPA)
+Associativity: property that a weak input paired with a stronger input enhances its later response
+BDNF: a neurotrophin similar to nerve growth factor
+Cooperativity: tendency for nearly simultaneous stimulation by two or more axons to produce long-term potentiation much more effectively than stimulation by just one
+Habituation: a decrease in response to a stimulus that is presented repeatedly and accompanied by no change in other stimuli
+Hebbian synapse: a synapse that increases in effectiveness because of simultaneous activity in the presynaptic and postsynaptic neurons
+Long-term depression (LTD): a prolonged decrease in response at a synapse
+Long-term potentiation (LTP): phenomenon that when one or more axons connected to a dendrite bombard it with a rapid series of stimuli, some of the synapses become more responsive to new input of the same type for minutes, days, or weeks
+NMDA receptor: a glutamate receptor that can respond to the drug N-methyl-D-aspartate (NMDA)
+Retrograde transmitter: a transmitter released by a postsynaptic cell that travels back to the presynaptic cell to modify it
+Sensitization: an increase in response to mild stimuli as a result of exposure to more intense stimuli
+Specificity: property that highly active synapses become strengthened and less active synapses do not
+g: a single underlying factor of general intelligence
+
+# Wakefulness
+Endogenous circadian rhythms: self-generated rhythm that lasts about a day
+Endogenous circannual rhythm: self-generated rhythm that lasts about a year
+Jet lag: a disruption of circadian rhythms due to crossing time zones
+Melatonin: hormone that influences both circadian and circannual rhythms
+Pineal gland: an endocrine gland located just posterior to the thalamus that releases the hormone melatonin
+Suprachiasmatic nucleus (SCN): part of the hypothalamus; provides the main control of the circadian rhythms
+Zeitgeber: stimulus that resets the circadian rhythm
+Alpha waves: a steady series of brain waves at a frequency of 8 to 12 per second that are characteristic of relaxation
+Basal forebrain: area anterior and dorsal to the hypothalamus; includes cell clusters that promote wakefulness and sleep
+Brain death: condition with no sign of brain activity and no response to any stimulus
+Coma: an extended period of unconsciousness with a low level of brain activity
+Insomnia: inadequate sleep
+K-complex: a sharp brain wave associated with temporary inhibition of neuronal firing
+Locus coeruleus: a small structure in the pons that emits bursts of impulses in response to meaningful events, especially those that produce emotional arousal
+Minimally conscious state: condition of decreased brain activity with occasional, brief periods of purposeful actions and limited speech comprehension
+Narcolepsy: a condition characterized by frequent periods of sleepiness during the day
+Night terrors: experiences of intense anxiety from which a person awakens screaming in terror; more severe than a nightmare
+Non-REM (NREM) sleep: stages of sleep other than REM
+Orexin (or hypocretin): neurotransmitter that increases wakefulness and arousal
+Paradoxical sleep: sleep that is deep in some ways and light in others
+Periodic limb movement disorder: a sleep disorder characterized by repeated involuntary movement of the legs and sometimes the arms
+PGO waves: a distinctive pattern of high-amplitude electrical potentials that occur first in the pons, then in the lateral geniculate, and then in the occipital cortex
+Polysomnograph: a combination of EEG and eye-movement records
+Pontomesencephalon: part of the reticular formation that contributes to cortical arousal
+Rapid eye movement (REM) sleep: sleep stage with rapid eye movements, high brain activity, and relaxation of the large muscles
+REM behavior disorder: a condition in which people move around vigorously during REM sleep
+Reticular formation: a structure that extends from the medulla into the forebrain; controls motor areas of the spinal cord and selectively increases arousal and attention in various forebrain areas
+Sleep apnea: impaired ability to breathe while sleeping
+Sleep spindle: 12 to 14 Hz brain waves in bursts that last at least half a second
+Slow-wave sleep (SWS): sleep occupied by slow, large-amplitude brain waves
+Unresponsive wakefulness syndrome: (coma) an extended period of unconsciousness with a low level of brain activity
+Activation-synthesis hypothesis: idea that a dream represents the brain's effort to make sense of sparse and distorted information
+Neurocognitive model: proposal that dreams represent thinking related to recent memories under conditions of reduced sensory input
+
+# Emotional
+Behavioral activation system (BAS): left brain hemispheric activity marked by low to moderate autonomic arousal and a tendency to approach, which could characterize either happiness or anger
+Behavioral inhibition system (BIS): right brain hemispheric activity, which increases attention and arousal, inhibits action, and stimulates emotions such as fear and disgust
+Facial-feedback hypothesis: a notion that the position of facial features influences emotions
+Limbic system: interlinked structures that form a border around the brainstem
+Pure autonomic failure: condition when output from the autonomic nervous system to the body fails
+Amygdala: temporal lobe structure important for evaluating emotional information
+Bed nucleus of the stria terminalis: a set of neurons that connect to the amygdala
+Benzodiazepines: a class of anti-anxiety drugs
+Dual-hormone hypothesis: aggressive behavior relates to facilitation by testosterone and inhibition by the hormone cortisol
+GABAA receptor: receptor complex structure that includes a site that binds GABA as well as sites that modify the sensitivity of the GABA site
+5-hydroxyindoleacetic acid (5-HIAA): serotonin's main metabolite
+Monoamine oxidase A (MAOA): a deficiency MAOA increases the build-up of serotonin inside neurons
+Panic disorder: condition marked by frequent periods of anxiety and rapid breathing, increased heart rate, sweating, and trembling
+Post-traumatic stress disorder (PTSD): a condition resulting from a severe traumatic experience, leading to a long-lasting state of frequent distressing recollections (flashbacks) and nightmares about the traumatic event, avoidance of reminders of it, and exaggerated arousal in response to noises and other stimuli
+Startle reflex: response that one makes after a sudden, unexpected loud noise or similar sudden stimulus
+Turnover: release and resynthesis of a neurotransmitter
+Adrenocorticotropic hormone (ACTH): chemical released from the anterior pituitary gland, which enhances metabolic activity and elevates blood levels of sugar
+Antibodies: Y-shaped proteins that attach to particular kinds of antigens
+Antigens: surface proteins on a cell that identify the cell as your own
+Behavioral medicine: field that includes the effects of diet, smoking, exercise, stressful experiences, and other behaviors on health
+Cortisol: hormone secreted by the adrenal cortex that elevates blood sugar and enhances metabolism
+Cytokine: small proteins that combat infections and communicate with the brain to elicit appropriate behaviors
+Enteric nervous system: a set of neurons that control digestion, stretching from the esophagus to the rectum
+General adaptation syndrome: a generalized response to stress
+HPA axis: the hypothalamus, pituitary gland, and adrenal cortex
+Immune system: structures that protect the body against viruses, bacteria, and other intruders
+Leukocyte: white blood cells
+Prostaglandins: chemicals the immune system delivers to the hypothalamus, causing a fever
+Psychoneuroimmunology: study of the ways in which experiences, especially stressful ones, alter the immune system and how the immune system influences the central nervous system
+Resilience: ability to recover well from a traumatic experience
+Stress: the nonspecific response of the body to any demand made upon it; also defined as events that are interpreted as threatening
+
+# Cognitive
+Anomia: a difficulty recalling the names of objects
+Aphasia: language impairment
+Broca's aphasia (nonfluent aphasia): a brain damage that causes impaired language
+Broca's area: portion of the brain that is associated with language production
+Corpus callosum: bundle of axons that connects the two hemispheres of the cerebral cortex
+Dyslexia: a specific impairment of reading in someone with adequate vision, adequate motivation, and adequate overall cognitive skill
+Fluent aphasia: condition characterized by poor language comprehension and impaired ability to remember the name of objects
+Interpreter: tendency of the left hemisphere to invent an explanation for an action when the true cause was unconscious
+Language acquisition device: a built-in mechanism for acquiring language
+Lateralization: divisions of labor between the two brain hemispheres
+Nonfluent aphasia: a brain damage that causes impaired production of language
+Optic chiasm: area where axons from each eye cross to the opposite side of the brain
+Planum temporale: section of the temporal cortex that is larger in the left hemisphere
+Productivity: ability of language to produce new signals to represent new ideas
+Split-brain syndrome: people who have undergone surgery to the corpus callosum
+Visual field: area of the world that an individual can see at any time
+Visual word form area: a special area of the temporal cortex, adjacent to the area most responsible for facial recognition
+Wernicke's aphasia (fluent aphasia): condition characterized by poor language comprehension and impaired ability to remember the name of objects
+Wernicke's area: portion of the brain located near the auditory cortex, associated with language comprehension
+Williams syndrome: condition in which the person has relatively good language abilities in spite of impairments in other regards
+Binocular rivalry: alternating conscious perceptions that occur when one views incompatible displays with the two eyes
+Conscious: capable of reporting the presence of a stimulus
+Dualism: belief that mind and body are different kinds of substance that exist independently
+Flash suppression: procedure of blocking conscious perception of a stationary object by surrounding it with flashing objects
+Hard problem: philosophical question as to why and how brain activity becomes conscious
+Identity position: view that mental processes and certain kinds of brain processes are the same thing, described in different terms
+Inattentional blindness: tendency to ignore most changes in a scene that occur slowly or during an eyeblink
+Masking: use of one stimulus to block perception of another
+Materialism: view that everything that exists is material or physical
+Mentalism: view that only the mind really exists and that the physical world could not exist unless some mind were aware of it
+Mind–body or mind–brain problem: question about the relationship between mental experience and brain activity
+Monism: a belief that the universe consists of only one kind of substance
+Phi phenomenon: tendency to see something as moving back and forth between positions when in fact it is alternately blinking on and off in those positions
+Spatial neglect: a tendency to ignore the left side of the body or the left side of objects
+Stroop effect: the difficulty of saying the color of ink of a word instead of reading the word itself
+Frontotemporal dementia: condition in which parts of the frontal and temporal lobes of the cerebral cortex gradually degenerate
+Orbitofrontal cortex: brain area that responds to a reward based on how it compares to other likely outcomes
+Oxytocin: hormone released by posterior pituitary; important for sexual and parental behaviors
+Social neuroscience: the study of how genes, chemicals, and brain activity contribute to social behavior
+Ventromedial prefrontal cortex: brain area that updates preferences based on recent information and monitors confidence in a decision
+
+# Psychopathology
+Affinity: tendency of a drug to bind to a receptor
+Agonist: a drug that mimics or increases the effects of a neurotransmitter
+Antabuse: drug that antagonizes the effects of acetaldehyde dehydrogenase by binding to its copper ion
+Antagonist: a drug that blocks a neurotransmitter
+Craving: an insistent search for something
+Efficacy: a drug's tendency to activate the receptor
+Methadone: drug similar to heroin and morphine that is taken orally
+Nucleus accumbens: brain area that is rich in dopamine and is central to the brain's reinforcement system
+Self-stimulation of the brain: behavior that is reinforced by electrical stimulation of a brain area
+Tolerance: decreased effect of a drug after repeated use
+Withdrawal: effects of drug cessation
+Atypical antidepressants: drugs with antidepressant effects that do not fit into any of the other antidepressant categories
+Bipolar disorder: a condition that alternates between depression and mania
+Deep brain stimulation: use of a battery-powered device implanted into a brain to deliver stimulation to certain areas
+Electroconvulsive therapy (ECT): a treatment for depression by electrically inducing a seizure
+Lithium: element whose salts are often used as therapy for bipolar disorder
+Major depression: a condition in which people feel sad and helpless every day for weeks at a time
+Mania: a condition characterized by restless activity, excitement, laughter, self-confidence, rambling speech, and loss of inhibitions
+Monoamine oxidase inhibitors (MAOIs): drugs that block the enzyme monoamine oxidase (MAO), a presynaptic terminal enzyme that metabolizes catecholamines and serotonin into inactive forms
+Psychedelics: drugs that distort perception
+Seasonal affective disorder (SAD): depression that recurs during a particular season, such as winter
+Selective serotonin reuptake inhibitors (SSRIs): drugs that block the reuptake of serotonin in the presynaptic termina
+Serotonin norepinephrine reuptake inhibitors (SNRIs): drugs that block the reuptake of serotonin and norepinephrine
+Tricyclics: antidepressant drugs that block the reuptake of catecholamines and serotonin by presynaptic terminals
+Antipsychotic (neuroleptic) drugs: drugs that tend to relieve schizophrenia and similar conditions
+Butyrophenones: a chemical family that includes antipsychotic drugs (haloperidol) that relieve the positive symptoms of schizophrenia
+Chlorpromazine: antipsychotic drug that relieves the positive symptoms of schizophrenia for most, though not all, patients
+Concordance: similarity, such as having the same disorder as someone else
+Delusions: unjustifiable beliefs
+Differential diagnosis: one that rules out other conditions with similar symptoms
+DISC1: (disrupted in schizophrenia 1) gene that controls production of dendritic spines and the generation of new neurons in the hippocampus
+Dopamine hypothesis of schizophrenia: idea that schizophrenia results from excess activity at dopamine synapses in certain brain areas
+Glutamate hypothesis of schizophrenia: proposal that schizophrenia relates in part to deficient activity at glutamate synapses, especially in the prefrontal cortex
+Hallucinations: false sensory experiences
+Mesolimbocortical system: neurons that project from the midbrain to the limbic system and prefrontal cortex
+Microdeletion: deletion of a small part of a chromosome
+Negative symptoms: absence of behaviors ordinarily seen in normal people (e.g., lack of emotional expression)
+Neurodevelopmental hypothesis: proposal that schizophrenia begins with abnormalities in the prenatal or neonatal development of the nervous system, based on either genetics or other influences
+Phenothiazines: a chemical family that includes antipsychotic drugs (chlorpromazine) that relieve the positive symptoms of schizophrenia
+Positive symptoms: presence of behaviors not seen in normal people
+Schizophrenia: a split between the emotional and intellectual aspects of experience
+Season-of-birth effect: tendency for people born in winter to have a slightly greater probability of developing schizophrenia than people born at other times of the year
+Second-generation antipsychotics: drugs that alleviate schizophrenia with less likelihood of movement problem
+Substance-induced psychotic disorder: condition similar to schizophrenia, provoked by large, repeated doses of a drug
+Tardive dyskinesia: a movement disorder characterized by tremors and other involuntary movement
+Two-hit hypothesis: schizophrenia is the result of a combination of a genetic predisposition and impacts from the environment in prenatal/neonatal development, later in life, or both
+Autism spectrum disorder: family of psychological disorders marked by impaired social and emotional exchange and other symptoms
+Folic acid: vitamin that is important for development of the nervous system
+

@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Study Arcade</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to game setup</a>
+  <header class="site-header">
+    <p class="author-line">Created by Dr. Grant Benham</p>
+  </header>
+
+  <main id="main-content" class="layout">
+    <section class="panel setup-panel" aria-labelledby="setup-heading">
+      <div class="panel-heading">
+        <h2 id="setup-heading">Setup</h2>
+        <button id="help-btn" type="button" class="help-icon-btn" aria-haspopup="dialog" aria-controls="help-modal" aria-expanded="false" aria-label="Open help and instructions">?</button>
+      </div>
+
+      <div class="field-row">
+        <label for="initials">Initials (for high scores)</label>
+        <input id="initials" name="initials" type="text" maxlength="3" value="AAA" aria-describedby="initials-help">
+        <p id="initials-help" class="hint">Letters and numbers only, 1 to 3 characters.</p>
+      </div>
+
+      <fieldset class="fieldset">
+        <legend>Term File</legend>
+        <div class="button-row">
+          <label for="terms-file-input" class="file-label">Load Terms .txt</label>
+          <input id="terms-file-input" type="file" accept=".txt,text/plain">
+        </div>
+        <p class="hint">Load the provided <code>terms.txt</code> or any compatible text file before starting.</p>
+      </fieldset>
+
+      <fieldset class="fieldset">
+        <legend>Topics</legend>
+        <div class="button-row">
+          <button id="select-all-topics-btn" type="button">Select All</button>
+          <button id="clear-topics-btn" type="button">Clear</button>
+        </div>
+        <div id="topic-list" class="topic-list" role="group" aria-label="Available topics"></div>
+      </fieldset>
+
+      <fieldset class="fieldset">
+        <legend>Game Settings</legend>
+        <div class="grid-two">
+          <div class="field-row">
+            <label for="game-mode">Game Type</label>
+            <select id="game-mode">
+              <option value="classic" selected>Term Invaders</option>
+              <option value="banner_drive">Banner Drive</option>
+            </select>
+          </div>
+          <div class="field-row">
+            <label for="choices-per-round">Choices Per Round</label>
+            <select id="choices-per-round">
+              <option value="2" selected>2 choices (Beginner)</option>
+              <option value="3">3 choices (Standard)</option>
+            </select>
+          </div>
+          <div class="field-row">
+            <label for="fall-speed">Speed</label>
+            <select id="fall-speed">
+              <option value="slow">Slow</option>
+              <option value="normal" selected>Normal</option>
+              <option value="fast">Fast</option>
+              <option value="super_fast">Super-Fast</option>
+            </select>
+          </div>
+          <div class="field-row">
+            <label class="inline-checkbox" for="reduce-motion">
+              <input id="reduce-motion" type="checkbox">
+              Reduced Motion
+            </label>
+            <label class="inline-checkbox" for="high-contrast">
+              <input id="high-contrast" type="checkbox">
+              High Contrast
+            </label>
+          </div>
+        </div>
+      </fieldset>
+
+      <div class="button-row">
+        <button id="start-btn" type="button" class="primary-btn">Start Mission</button>
+        <button id="pause-btn" type="button" disabled>Pause</button>
+        <button id="skip-btn" type="button" disabled>Skip Definition</button>
+      </div>
+      <p id="terms-source-indicator" class="hint source-indicator" aria-live="polite">
+        Term Source: no terms file loaded
+      </p>
+    </section>
+
+    <section class="panel game-panel" aria-labelledby="game-heading">
+      <h2 id="game-heading">Game Arena</h2>
+
+      <div class="hud" role="status" aria-live="polite">
+        <p><strong>Score:</strong> <span id="score-text">0</span></p>
+        <p id="city-hud-item"><strong>City Integrity:</strong> <span id="city-text">100%</span></p>
+        <p><strong>Remaining Terms:</strong> <span id="remaining-text">0</span></p>
+      </div>
+
+      <div class="definition-box" aria-live="polite" aria-atomic="true">
+        <p class="definition-label">Current Definition</p>
+        <p id="definition-text">Start a mission to begin.</p>
+      </div>
+
+      <div class="canvas-wrap">
+        <canvas id="game-canvas" width="1080" height="690" tabindex="0" aria-label="Study Arcade game canvas"></canvas>
+      </div>
+
+      <section id="lane-controls-section" class="lane-controls" aria-label="Controls">
+        <div class="control-row">
+          <button id="left-btn" type="button" disabled>Left</button>
+          <button id="right-btn" type="button" disabled>Right</button>
+          <button id="fire-btn" type="button" disabled>Fire!</button>
+        </div>
+      </section>
+
+      <section class="help" aria-label="Keyboard controls">
+        <p id="help-text">Use Left/Right controls, <kbd>1</kbd> to <kbd>3</kbd>, or arrow keys to select a lane. Press Fire, <kbd>Enter</kbd>, or <kbd>Space</kbd> to shoot. Use <kbd>P</kbd> to pause and <kbd>K</kbd> to skip definition.</p>
+      </section>
+    </section>
+
+    <section class="panel scores-panel" aria-labelledby="scores-heading">
+      <h2 id="scores-heading">Top 3 Scores</h2>
+      <ol id="scores-list" class="scores-list"></ol>
+      <div class="button-row">
+        <button id="clear-scores-btn" type="button">Clear Scores</button>
+      </div>
+      <p id="score-storage-note" class="hint">Scores are stored in this browser only.</p>
+
+      <hr class="panel-divider">
+      <h3 id="correct-terms-heading">Correctly Guessed This Game</h3>
+      <ul id="correct-terms-list" class="correct-terms-list" aria-labelledby="correct-terms-heading"></ul>
+    </section>
+  </main>
+
+  <div id="help-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="help-modal-title" aria-describedby="help-modal-body">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="help-modal-title">How To Use Study Arcade</h3>
+        <button id="help-close-btn" type="button" class="modal-close-btn" aria-label="Close help">Close</button>
+      </div>
+      <div id="help-modal-body" class="modal-body">
+        <p><strong>Quick Start</strong></p>
+        <ol>
+          <li>Click <strong>Load Terms .txt</strong> and choose a compatible terms file (for example, <code>terms.txt</code>).</li>
+          <li>Check that the source line says a file is loaded.</li>
+          <li>Select one or more topics.</li>
+          <li>Choose game type, choices per round, and speed.</li>
+          <li>Click <strong>Start Mission</strong>.</li>
+        </ol>
+        <p><strong>Terms File Format</strong></p>
+        <p>Use topic headers and term-definition lines:</p>
+        <pre># Topic Name
+Term: Definition
+Another term: Another definition</pre>
+        <p><strong>Game Modes</strong></p>
+        <p><strong>Term Invaders:</strong> move left/right to choose a lane, then fire at the term that matches the current definition.</p>
+        <p><strong>Banner Drive:</strong> steer left/right and pass under the banner that matches the current definition.</p>
+        <p><strong>Controls</strong></p>
+        <p>Buttons: Left, Right, and Fire (Term Invaders only). Keyboard: arrow keys to move, <kbd>Enter</kbd>/<kbd>Space</kbd> to fire in Term Invaders, <kbd>P</kbd> to pause/resume, and <kbd>K</kbd> to skip.</p>
+        <p><strong>Scoring</strong></p>
+        <p>Correct answers add points. Wrong answers reduce points. In Term Invaders, city integrity drops when terms reach the city.</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="live-region" class="sr-only" aria-live="assertive" aria-atomic="true"></div>
+  <script src="app.js"></script>
+</body>
+</html>
