@@ -121,7 +121,7 @@
         <p><strong>Remaining Terms:</strong> <span id="remaining-text">0</span></p>
       </div>
 
-      <div class="definition-box" aria-live="polite" aria-atomic="true">
+      <div id="definition-box" class="definition-box" aria-live="polite" aria-atomic="true">
         <p class="definition-label">Current Definition</p>
         <p id="definition-text">Start a mission to begin.</p>
       </div>
@@ -134,11 +134,16 @@
           <p><strong>Streak:</strong> <span id="mission-streak-text">0</span></p>
           <p><strong>Timer:</strong> <span id="mission-timer-text">Untimed</span></p>
         </div>
+        <div id="mission-definition-box" class="definition-box mission-definition-box hidden" aria-live="polite" aria-atomic="true">
+          <p class="definition-label">Current Definition</p>
+          <p id="mission-definition-text">Start Mission to load a prompt.</p>
+        </div>
         <div id="mission-choice-list" class="mission-choice-list" role="group" aria-label="Mission answer choices"></div>
         <div class="mission-actions">
           <button id="repeat-definition-btn" type="button">Repeat Definition</button>
           <button id="mission-hint-btn" type="button">Hint</button>
           <button id="mission-submit-btn" type="button">Submit Choice</button>
+          <button id="mission-settings-access-btn" type="button" aria-pressed="false">Adjust Settings</button>
         </div>
         <p id="mission-feedback" class="hint" aria-live="polite"></p>
       </section>
@@ -200,7 +205,8 @@ Another term: Another definition</pre>
         <p><strong>Mission Accessible:</strong> fully DOM-based gameplay with three large answer choices per prompt, optional timing, and keyboard-first input.</p>
         <p><strong>Controls</strong></p>
         <p>Term Invaders/Banner Drive: Left/Right controls or arrow keys, <kbd>P</kbd> pause/resume, <kbd>K</kbd> skip. Fire controls apply to Term Invaders only.</p>
-        <p>Mission Accessible: use <kbd>1</kbd>, <kbd>2</kbd>, <kbd>3</kbd> to select choices, <kbd>Enter</kbd> or <kbd>Space</kbd> to submit, <kbd>H</kbd> for hint, <kbd>R</kbd> to repeat the definition, plus <kbd>P</kbd> and <kbd>K</kbd>.</p>
+        <p>Mission Accessible: use <kbd>1</kbd>, <kbd>2</kbd>, <kbd>3</kbd> to select choices, <kbd>Enter</kbd> or <kbd>Space</kbd> to submit when confirm mode is enabled, <kbd>H</kbd> for hint, <kbd>R</kbd> to repeat the definition, plus <kbd>P</kbd> and <kbd>K</kbd>.</p>
+        <p>Mission Accessible keeps keyboard focus cycling inside the mission arena while active. Use <strong>Adjust Settings</strong> to temporarily unlock focus and jump to Setup controls, then use <strong>Return to Mission Focus</strong> to lock focus back to gameplay.</p>
         <p>If you change settings during a mission, the game auto-pauses. Changing speed resets the current wave/set in Term Invaders and Banner Drive, while Mission Accessible applies updated options to the next prompt.</p>
         <p><strong>Scoring</strong></p>
         <p>All game types use three choices per prompt. Correct answers add points and wrong answers reduce points. In Term Invaders, city integrity drops when terms reach the city.</p>

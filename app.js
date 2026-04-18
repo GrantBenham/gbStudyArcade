@@ -64,17 +64,21 @@
     cityHudItem: document.getElementById("city-hud-item"),
     cityText: document.getElementById("city-text"),
     remainingText: document.getElementById("remaining-text"),
+    definitionBox: document.getElementById("definition-box"),
     definitionText: document.getElementById("definition-text"),
     missionArena: document.getElementById("mission-accessible-arena"),
     missionStatus: document.getElementById("mission-status"),
     missionRoundText: document.getElementById("mission-round-text"),
     missionStreakText: document.getElementById("mission-streak-text"),
     missionTimerText: document.getElementById("mission-timer-text"),
+    missionDefinitionBox: document.getElementById("mission-definition-box"),
+    missionDefinitionText: document.getElementById("mission-definition-text"),
     missionChoiceList: document.getElementById("mission-choice-list"),
     missionFeedback: document.getElementById("mission-feedback"),
     repeatDefinitionBtn: document.getElementById("repeat-definition-btn"),
     missionHintBtn: document.getElementById("mission-hint-btn"),
     missionSubmitBtn: document.getElementById("mission-submit-btn"),
+    missionSettingsAccessBtn: document.getElementById("mission-settings-access-btn"),
     canvas: document.getElementById("game-canvas"),
     scoresList: document.getElementById("scores-list"),
     clearScoresBtn: document.getElementById("clear-scores-btn"),
@@ -144,6 +148,7 @@
       missionAnswered: 0,
       missionTimedOut: 0,
       missionWrong: 0,
+      missionFocusLocked: true,
       pauseStartedAt: 0,
       nextRoundAt: 0,
       lastNow: performance.now()
@@ -325,6 +330,7 @@
     els.repeatDefinitionBtn.addEventListener("click", repeatCurrentDefinition);
     els.missionHintBtn.addEventListener("click", requestMissionHint);
     els.missionSubmitBtn.addEventListener("click", submitMissionAccessibleChoice);
+    els.missionSettingsAccessBtn.addEventListener("click", toggleMissionSettingsAccess);
     els.canvas.addEventListener("click", handleCanvasClick);
 
     document.addEventListener("keydown", (event) => {
@@ -346,6 +352,9 @@
         event.preventDefault();
         openHelpModal();
         return;
+      }
+      if (event.key === "Tab" && shouldTrapMissionFocus()) {
+        trapMissionFocus(event);
       }
 
       if (!state.game.running || state.game.gameOver || isTypingElement(event.target)) {
@@ -478,6 +487,83 @@
     }
   }
 
+  function shouldTrapMissionFocus() {
+    return isMissionAccessibleMode()
+      && state.game.running
+      && !state.game.gameOver
+      && state.game.missionFocusLocked
+      && !state.helpOpen;
+  }
+
+  function getMissionFocusableElements() {
+    if (!els.missionArena) {
+      return [];
+    }
+    const nodes = els.missionArena.querySelectorAll("button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])");
+    return Array.from(nodes).filter((node) => node instanceof HTMLElement && !node.classList.contains("hidden"));
+  }
+
+  function trapMissionFocus(event) {
+    const focusables = getMissionFocusableElements();
+    if (!focusables.length) {
+      return;
+    }
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    const active = document.activeElement;
+    if (!(active instanceof HTMLElement) || !focusables.includes(active)) {
+      event.preventDefault();
+      first.focus();
+      return;
+    }
+    if (event.shiftKey && active === first) {
+      event.preventDefault();
+      last.focus();
+      return;
+    }
+    if (!event.shiftKey && active === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  }
+
+  function focusMissionPrimaryControl() {
+    const firstChoice = els.missionChoiceList
+      ? els.missionChoiceList.querySelector("button.mission-choice-btn:not(:disabled)")
+      : null;
+    if (firstChoice instanceof HTMLElement) {
+      firstChoice.focus();
+      return;
+    }
+    if (els.repeatDefinitionBtn && !els.repeatDefinitionBtn.disabled) {
+      els.repeatDefinitionBtn.focus();
+      return;
+    }
+    if (els.missionSettingsAccessBtn && !els.missionSettingsAccessBtn.disabled) {
+      els.missionSettingsAccessBtn.focus();
+    }
+  }
+
+  function toggleMissionSettingsAccess() {
+    if (!isMissionAccessibleMode()) {
+      return;
+    }
+    state.game.missionFocusLocked = !state.game.missionFocusLocked;
+    if (!state.game.missionFocusLocked) {
+      pauseForSettingsEdit();
+      state.game.missionFeedback = "Focus unlocked for setup changes. Update settings, then choose Return to Mission Focus.";
+      if (els.gameMode) {
+        els.gameMode.focus();
+      }
+      announce("Mission focus unlocked for setup changes.");
+    } else {
+      state.game.missionFeedback = "Mission focus lock re-enabled.";
+      announce("Mission focus locked to arena controls.");
+      focusMissionPrimaryControl();
+    }
+    renderMissionAccessibleArena();
+  }
+
   function initializeSettingsUI() {
     const reduceBySystem = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     els.reduceMotion.checked = state.settings.reduceMotion ?? reduceBySystem;
@@ -509,8 +595,19 @@
     const selectedMode = mode || DEFAULT_GAME_MODE;
     const isClassic = selectedMode === "classic";
     const isMission = isMissionAccessibleMode(selectedMode);
+    if (!isMission) {
+      state.game.missionFocusLocked = false;
+    } else if (!state.game.running) {
+      state.game.missionFocusLocked = true;
+    }
     els.laneControlsSection.classList.toggle("hidden", isMission);
     els.canvas.parentElement.classList.toggle("hidden", isMission);
+    if (els.definitionBox) {
+      els.definitionBox.classList.toggle("hidden", isMission);
+    }
+    if (els.missionDefinitionBox) {
+      els.missionDefinitionBox.classList.toggle("hidden", !isMission);
+    }
     if (els.speedField) {
       els.speedField.classList.toggle("hidden", isMission);
     }
@@ -533,7 +630,7 @@
     } else if (selectedMode === "banner_drive") {
       els.helpText.innerHTML = "Use Left/Right controls or <kbd>Left</kbd>/<kbd>Right</kbd> arrows to steer smoothly. Guide the car under the correct banner. Use <kbd>P</kbd> to pause and <kbd>K</kbd> to skip current set.";
     } else {
-      els.helpText.innerHTML = "Mission Accessible: choose with <kbd>1</kbd>, <kbd>2</kbd>, or <kbd>3</kbd>, then submit with <kbd>Enter</kbd> or <kbd>Space</kbd>. Press <kbd>H</kbd> for hint, <kbd>R</kbd> to repeat the definition, <kbd>P</kbd> to pause, and <kbd>K</kbd> to skip.";
+      els.helpText.innerHTML = "Mission Accessible: choose with <kbd>1</kbd>, <kbd>2</kbd>, or <kbd>3</kbd>. With Confirm enabled, submit by <kbd>Enter</kbd>/<kbd>Space</kbd>; otherwise selection submits immediately. Press <kbd>H</kbd> for hint, <kbd>R</kbd> to repeat, <kbd>P</kbd> to pause, and <kbd>K</kbd> to skip.";
     }
     renderMissionAccessibleArena();
   }
@@ -811,6 +908,7 @@
     state.game.missionAnswered = 0;
     state.game.missionTimedOut = 0;
     state.game.missionWrong = 0;
+    state.game.missionFocusLocked = state.game.mode === "mission_accessible";
 
     if (state.game.mode === "classic") {
       setDefinitionText("Preparing first wave...");
@@ -845,6 +943,7 @@
     renderCorrectTerms();
     if (state.game.mode === "mission_accessible") {
       announce("Mission started. Use the Mission Accessible arena to choose and submit answers.");
+      focusMissionPrimaryControl();
     } else {
       announce("Mission started. Match the definition to the correct term.");
       els.canvas.focus();
@@ -979,6 +1078,10 @@
       state.game.rightPressed = false;
     } else {
       state.game.pauseStartedAt = 0;
+      if (isMissionAccessibleMode() && !state.game.missionFocusLocked) {
+        state.game.missionFocusLocked = true;
+        state.game.missionFeedback = "Mission focus lock re-enabled after resume.";
+      }
     }
     els.pauseBtn.textContent = state.game.paused ? "Resume" : "Pause";
     announce(state.game.paused ? "Game paused." : "Game resumed.");
@@ -986,6 +1089,8 @@
       state.game.lastNow = performance.now();
       if (!isMissionAccessibleMode()) {
         els.canvas.focus();
+      } else {
+        focusMissionPrimaryControl();
       }
     }
     renderMissionAccessibleArena();
@@ -1589,17 +1694,28 @@
     }
     const isMission = isMissionAccessibleMode();
     els.missionArena.classList.toggle("hidden", !isMission);
+    if (els.missionDefinitionBox) {
+      els.missionDefinitionBox.classList.toggle("hidden", !isMission);
+    }
     if (!isMission) {
       return;
     }
 
     els.missionChoiceList.innerHTML = "";
+    const confirmEnabled = isMissionConfirmEnabled();
+    els.missionSubmitBtn.classList.toggle("hidden", !confirmEnabled);
+    els.missionSettingsAccessBtn.textContent = state.game.missionFocusLocked ? "Adjust Settings" : "Return to Mission Focus";
+    els.missionSettingsAccessBtn.setAttribute("aria-pressed", state.game.missionFocusLocked ? "false" : "true");
+
     if (!state.game.running) {
       els.missionStatus.textContent = "Start Mission to begin the fully accessible mode.";
       els.missionRoundText.textContent = "-";
       els.missionStreakText.textContent = "0";
       els.missionTimerText.textContent = "Untimed";
       els.missionFeedback.textContent = "";
+      els.missionSettingsAccessBtn.disabled = true;
+      els.missionHintBtn.disabled = true;
+      els.missionSubmitBtn.disabled = true;
       return;
     }
     if (state.game.gameOver) {
@@ -1608,10 +1724,16 @@
       els.missionStreakText.textContent = String(state.game.missionBestStreak);
       els.missionTimerText.textContent = "Done";
       els.missionFeedback.textContent = state.game.missionFeedback;
+      els.missionSettingsAccessBtn.disabled = true;
+      els.missionHintBtn.disabled = true;
+      els.missionSubmitBtn.disabled = true;
       return;
     }
     if (state.game.modeChangeRestartRequired) {
       els.missionStatus.textContent = "Mode changed. Press Start Mission to switch modes, or switch back to continue.";
+      els.missionSettingsAccessBtn.disabled = true;
+      els.missionHintBtn.disabled = true;
+      els.missionSubmitBtn.disabled = true;
       return;
     }
 
@@ -1624,11 +1746,13 @@
       : "Untimed";
 
     if (state.game.paused) {
-      els.missionStatus.textContent = "Game is paused. Press Resume to continue.";
+      els.missionStatus.textContent = state.game.missionFocusLocked
+        ? "Game is paused. Press Resume to continue."
+        : "Focus unlocked for setup changes. Press Return to Mission Focus when ready.";
     } else if (!round) {
       els.missionStatus.textContent = "Loading next Mission Accessible prompt...";
     } else {
-      const confirmText = isMissionConfirmEnabled() ? " Select then submit." : " Selection submits immediately.";
+      const confirmText = confirmEnabled ? " Select then submit." : " Selection submits immediately.";
       els.missionStatus.textContent = `Choose the matching term.${confirmText}`;
       round.options.forEach((pair, index) => {
         const button = document.createElement("button");
@@ -1644,8 +1768,9 @@
     }
 
     els.missionFeedback.textContent = state.game.missionFeedback;
+    els.missionSettingsAccessBtn.disabled = state.game.gameOver;
     els.missionHintBtn.disabled = state.game.paused || state.game.gameOver || !state.game.missionRound;
-    els.missionSubmitBtn.disabled = state.game.paused || state.game.gameOver || !state.game.missionRound;
+    els.missionSubmitBtn.disabled = !confirmEnabled || state.game.paused || state.game.gameOver || !state.game.missionRound;
   }
 
   function updateHud() {
@@ -1673,6 +1798,9 @@
 
   function setDefinitionText(text) {
     els.definitionText.textContent = text;
+    if (els.missionDefinitionText) {
+      els.missionDefinitionText.textContent = text;
+    }
   }
 
   function toggleGameButtons(isRunning) {

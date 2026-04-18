@@ -347,6 +347,10 @@ button:disabled {
   flex: 1 1 auto;
 }
 
+.mission-definition-box {
+  margin-bottom: 0;
+}
+
 .mission-choice-btn {
   width: 100%;
   border-radius: 12px;
@@ -365,8 +369,13 @@ button:disabled {
 
 .mission-actions {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.45rem;
+}
+
+#mission-settings-access-btn[aria-pressed="true"] {
+  border-color: #f9e372;
+  box-shadow: inset 0 0 0 2px rgba(249, 227, 114, 0.36);
 }
 
 #mission-feedback {
