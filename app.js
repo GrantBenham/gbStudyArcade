@@ -13,6 +13,8 @@
   const SCOREBOARD_KEY = "studyArcadeScoreboard";
   const DEFAULT_FALL_SPEED = "normal";
   const DEFAULT_GAME_MODE = "classic";
+  const DEFAULT_CHOICES_PER_ROUND = 3;
+  const DEFAULT_CLASSIC_START_LANE = Math.floor(LANE_COUNT / 2);
 
   const FALL_SPEED_MULTIPLIER = {
     slow: 0.7,
@@ -98,7 +100,7 @@
       paused: false,
       gameOver: false,
       won: false,
-      selectedLane: 0,
+      selectedLane: DEFAULT_CLASSIC_START_LANE,
       score: 0,
       cityIntegrity: 100,
       roundsCompleted: 0,
@@ -115,6 +117,7 @@
       lastBannerSpawnAt: 0,
       beam: null,
       pulseAt: 0,
+      modeChangeRestartRequired: false,
       nextRoundAt: 0,
       lastNow: performance.now()
     };
@@ -155,23 +158,85 @@
       event.target.value = "";
     });
 
+    [els.gameMode, els.choicesPerRound, els.fallSpeed, els.reduceMotion, els.highContrast].forEach((control) => {
+      control.addEventListener("focus", () => {
+        pauseForSettingsEdit();
+      });
+    });
+
     els.gameMode.addEventListener("change", () => {
+      const activeMission = state.game.running && !state.game.gameOver;
+      if (activeMission) {
+        pauseForSettingsEdit();
+        const selectedMode = els.gameMode.value || DEFAULT_GAME_MODE;
+        persistSettings();
+        if (selectedMode !== state.game.mode) {
+          setModeChangeRestartRequired(true);
+          // Keep current mission HUD/help aligned to the active mode while restart is required.
+          updateModeUI(state.game.mode);
+          announce("Game paused. Game mode change requires starting a new mission. Press Start Mission to restart, or switch back to the current mode to unlock Resume.");
+          return;
+        }
+
+        if (state.game.modeChangeRestartRequired) {
+          setModeChangeRestartRequired(false);
+          restoreDefinitionForCurrentMission();
+          announce("Game mode switch canceled. Press Resume to continue current mission.");
+          return;
+        }
+
+        updateModeUI(state.game.mode);
+        announce("Game paused. Current mission mode is unchanged.");
+        return;
+      }
       updateModeUI(els.gameMode.value);
       persistSettings();
     });
 
-    els.choicesPerRound.addEventListener("change", persistSettings);
+    els.choicesPerRound.addEventListener("change", () => {
+      const activeMission = state.game.running && !state.game.gameOver;
+      if (activeMission) {
+        pauseForSettingsEdit();
+        const resetNow = resetWaveForMidMissionSettingsChange();
+        announce(resetNow
+          ? "Game paused. Choices per round updated and current wave reset. Press Resume to continue."
+          : "Game paused. Choices per round updated for upcoming rounds.");
+      }
+      persistSettings();
+    });
 
-    els.fallSpeed.addEventListener("change", persistSettings);
+    els.fallSpeed.addEventListener("change", () => {
+      const activeMission = state.game.running && !state.game.gameOver;
+      if (activeMission) {
+        pauseForSettingsEdit();
+        const resetNow = resetWaveForMidMissionSettingsChange();
+        announce(resetNow
+          ? "Game paused. Speed updated and current wave reset. Press Resume to continue."
+          : "Game paused. Speed updated for upcoming terms.");
+      }
+      persistSettings();
+    });
 
     els.initials.addEventListener("blur", () => {
       els.initials.value = sanitizeInitials(els.initials.value);
       persistSettings();
     });
 
-    els.reduceMotion.addEventListener("change", persistSettings);
+    els.reduceMotion.addEventListener("change", () => {
+      const activeMission = state.game.running && !state.game.gameOver;
+      if (activeMission) {
+        pauseForSettingsEdit();
+        announce("Game paused. Reduced Motion setting updated.");
+      }
+      persistSettings();
+    });
 
     els.highContrast.addEventListener("change", () => {
+      const activeMission = state.game.running && !state.game.gameOver;
+      if (activeMission) {
+        pauseForSettingsEdit();
+        announce("Game paused. High Contrast setting updated.");
+      }
       document.body.classList.toggle("high-contrast", els.highContrast.checked);
       persistSettings();
     });
@@ -314,7 +379,7 @@
     els.reduceMotion.checked = state.settings.reduceMotion ?? reduceBySystem;
     els.highContrast.checked = true;
     els.gameMode.value = state.settings.gameMode || DEFAULT_GAME_MODE;
-    els.choicesPerRound.value = String(state.settings.choicesPerRound || 2);
+    els.choicesPerRound.value = String(state.settings.choicesPerRound || DEFAULT_CHOICES_PER_ROUND);
     els.fallSpeed.value = state.settings.fallSpeed || DEFAULT_FALL_SPEED;
     if (state.settings.initials) {
       els.initials.value = state.settings.initials;
@@ -541,7 +606,7 @@
     state.game = createGameState();
     state.game.running = true;
     state.game.mode = els.gameMode.value || DEFAULT_GAME_MODE;
-    state.game.selectedLane = 0;
+    state.game.selectedLane = DEFAULT_CLASSIC_START_LANE;
     state.game.lastNow = performance.now();
     state.game.allPairs = pairs.slice();
     state.game.remainingTargets = shuffle(pairs.slice());
@@ -557,7 +622,7 @@
       setDefinitionText("Preparing first wave...");
     } else {
       state.game.car = {
-        x: CANVAS_WIDTH / 2,
+        x: laneCenters[DEFAULT_CLASSIC_START_LANE],
         y: Math.round(CANVAS_HEIGHT * 0.7),
         width: 58,
         height: 102,
@@ -570,7 +635,7 @@
     }
 
     toggleGameButtons(true);
-    selectLane(0);
+    selectLane(DEFAULT_CLASSIC_START_LANE);
     updateModeUI(state.game.mode);
     if (state.game.mode === "classic") {
       startNextRound(performance.now());
@@ -592,8 +657,87 @@
     return pairs;
   }
 
+  function pauseForSettingsEdit() {
+    if (!state.game.running || state.game.gameOver || state.game.paused) {
+      return false;
+    }
+    state.game.paused = true;
+    els.pauseBtn.textContent = "Resume";
+    return true;
+  }
+
+  function setModeChangeRestartRequired(isRequired) {
+    state.game.modeChangeRestartRequired = !!isRequired;
+    if (!state.game.running || state.game.gameOver) {
+      return;
+    }
+    if (state.game.modeChangeRestartRequired) {
+      state.game.paused = true;
+      els.pauseBtn.disabled = true;
+      els.pauseBtn.textContent = "Restart Required";
+      setDefinitionText("Mode change selected. Start Mission to switch modes, or switch back to continue this mission.");
+      return;
+    }
+    els.pauseBtn.disabled = false;
+    els.pauseBtn.textContent = state.game.paused ? "Resume" : "Pause";
+  }
+
+  function restoreDefinitionForCurrentMission() {
+    if (state.game.mode === "banner_drive") {
+      updateBannerDefinition();
+      return;
+    }
+    if (state.game.currentTarget && state.game.currentTarget.definition) {
+      setDefinitionText(state.game.currentTarget.definition);
+      return;
+    }
+    if (state.game.activeTerms.length) {
+      setNextClassicTargetFromActiveTerms();
+      return;
+    }
+    setDefinitionText("Loading next wave...");
+  }
+
+  function resetWaveForMidMissionSettingsChange() {
+    if (!state.game.running || state.game.gameOver) {
+      return false;
+    }
+    if (state.game.mode === "classic") {
+      if (!state.game.activeTerms.length) {
+        return false;
+      }
+      const unresolvedTerms = state.game.activeTerms.filter((term) => term.state !== "correct_flash");
+      if (!unresolvedTerms.length) {
+        return false;
+      }
+      unresolvedTerms.forEach((term) => reinsertTarget(term.pair));
+      state.game.activeTerms = [];
+      state.game.currentTarget = null;
+      state.game.nextRoundAt = performance.now();
+      setDefinitionText("Settings updated. Wave will restart when you resume.");
+      updateHud();
+      return true;
+    }
+
+    const unresolvedSets = state.game.activeBannerSets.filter((set) => !set.evaluated);
+    if (!unresolvedSets.length) {
+      return false;
+    }
+    unresolvedSets.forEach((set) => reinsertTarget(set.target));
+    state.game.activeBannerSets = state.game.activeBannerSets.filter((set) => set.evaluated);
+    state.game.currentTarget = null;
+    state.game.lastBannerSpawnAt = performance.now() - getBannerSpawnInterval();
+    updateBannerDefinition();
+    updateHud();
+    return true;
+  }
+
   function togglePause() {
     if (!state.game.running || state.game.gameOver) {
+      return;
+    }
+    if (state.game.modeChangeRestartRequired) {
+      announce("Resume is locked because game mode changed. Press Start Mission to switch modes, or switch back to the current mode to resume.");
       return;
     }
     state.game.paused = !state.game.paused;
@@ -601,6 +745,7 @@
     announce(state.game.paused ? "Game paused." : "Game resumed.");
     if (!state.game.paused) {
       state.game.lastNow = performance.now();
+      els.canvas.focus();
     }
   }
 
@@ -709,7 +854,7 @@
       return;
     }
 
-    const choiceCount = Math.max(2, Math.min(3, Number(els.choicesPerRound.value) || 2));
+    const choiceCount = Math.max(2, Math.min(3, Number(els.choicesPerRound.value) || DEFAULT_CHOICES_PER_ROUND));
     const waveSize = Math.min(choiceCount, state.game.remainingTargets.length);
     const wavePairs = [];
     for (let i = 0; i < waveSize; i += 1) {
@@ -785,7 +930,7 @@
     }
 
     const target = state.game.remainingTargets.pop();
-    const choiceCount = Math.max(2, Math.min(3, Number(els.choicesPerRound.value) || 2));
+    const choiceCount = Math.max(2, Math.min(3, Number(els.choicesPerRound.value) || DEFAULT_CHOICES_PER_ROUND));
     const distractors = buildDistractors(target, choiceCount - 1);
     const roundPairs = shuffle([target, ...distractors]);
     const lanePool = shuffle([0, 1, 2]).slice(0, roundPairs.length);
@@ -1471,7 +1616,12 @@
     ctx.font = "bold 52px 'Lucida Console', 'Courier New', monospace";
     ctx.fillText("PAUSED", CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 - 10);
     ctx.font = "20px 'Trebuchet MS', 'Verdana', sans-serif";
-    ctx.fillText("Press P or Resume to continue", CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 28);
+    if (state.game.modeChangeRestartRequired) {
+      ctx.fillText("Mode changed. Press Start Mission to switch modes.", CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 18);
+      ctx.fillText("Or switch back to current mode to unlock Resume.", CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 48);
+    } else {
+      ctx.fillText("Press P or Resume to continue", CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 28);
+    }
     ctx.restore();
   }
 
@@ -1587,7 +1737,7 @@
   function persistSettings() {
     const settings = {
       gameMode: els.gameMode.value || DEFAULT_GAME_MODE,
-      choicesPerRound: Number(els.choicesPerRound.value) || 2,
+      choicesPerRound: Number(els.choicesPerRound.value) || DEFAULT_CHOICES_PER_ROUND,
       fallSpeed: els.fallSpeed.value || DEFAULT_FALL_SPEED,
       reduceMotion: !!els.reduceMotion.checked,
       highContrast: !!els.highContrast.checked,
