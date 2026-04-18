@@ -51,16 +51,10 @@
             <select id="game-mode">
               <option value="classic" selected>Term Invaders</option>
               <option value="banner_drive">Banner Drive</option>
+              <option value="mission_accessible">Mission Accessible</option>
             </select>
           </div>
-          <div class="field-row">
-            <label for="choices-per-round">Choices Per Round</label>
-            <select id="choices-per-round">
-              <option value="2">2 choices</option>
-              <option value="3" selected>3 choices</option>
-            </select>
-          </div>
-          <div class="field-row">
+          <div id="speed-field" class="field-row">
             <label for="fall-speed">Speed</label>
             <select id="fall-speed">
               <option value="slow">Slow</option>
@@ -69,13 +63,31 @@
               <option value="super_fast">Super-Fast</option>
             </select>
           </div>
-          <div class="field-row">
-            <label for="accessibility-mode">Accessibility Mode</label>
-            <select id="accessibility-mode">
-              <option value="standard" selected>Off (Standard)</option>
-              <option value="assisted">Assisted</option>
-              <option value="accessible">Accessible</option>
-            </select>
+          <div id="mission-settings" class="mission-settings hidden" aria-labelledby="mission-settings-heading">
+            <p id="mission-settings-heading" class="mission-settings-title">Mission Accessible Options</p>
+            <div class="field-row">
+              <label for="mission-pace">Pace</label>
+              <select id="mission-pace">
+                <option value="untimed" selected>Untimed</option>
+                <option value="timed">Timed</option>
+              </select>
+            </div>
+            <div class="field-row">
+              <label for="mission-time-limit">Time Per Prompt</label>
+              <select id="mission-time-limit">
+                <option value="15">15 seconds</option>
+                <option value="30" selected>30 seconds</option>
+                <option value="60">60 seconds</option>
+              </select>
+            </div>
+            <label class="inline-checkbox" for="mission-confirm">
+              <input id="mission-confirm" type="checkbox">
+              Confirm before submit
+            </label>
+            <label class="inline-checkbox" for="mission-hints">
+              <input id="mission-hints" type="checkbox" checked>
+              Hints enabled
+            </label>
           </div>
           <div class="field-row">
             <label class="inline-checkbox" for="reduce-motion">
@@ -114,14 +126,21 @@
         <p id="definition-text">Start a mission to begin.</p>
       </div>
 
-      <section id="accessible-controls" class="accessible-controls" aria-labelledby="accessible-controls-heading">
-        <h3 id="accessible-controls-heading">Accessible Interaction</h3>
-        <p id="accessible-status" class="hint" aria-live="polite">Start a mission to load answer choices.</p>
-        <div class="accessible-actions">
-          <button id="repeat-definition-btn" type="button">Repeat Definition</button>
-          <button id="toggle-scan-btn" type="button" aria-pressed="false">Scan: Off</button>
+      <section id="mission-accessible-arena" class="mission-arena hidden" aria-labelledby="mission-arena-heading">
+        <h3 id="mission-arena-heading">Mission Accessible Arena</h3>
+        <p id="mission-status" class="hint" aria-live="polite">Start Mission to begin the fully accessible mode.</p>
+        <div class="mission-metrics" role="status" aria-live="polite">
+          <p><strong>Question:</strong> <span id="mission-round-text">-</span></p>
+          <p><strong>Streak:</strong> <span id="mission-streak-text">0</span></p>
+          <p><strong>Timer:</strong> <span id="mission-timer-text">Untimed</span></p>
         </div>
-        <div id="accessible-choice-list" class="accessible-choice-list" role="group" aria-label="Current answer choices"></div>
+        <div id="mission-choice-list" class="mission-choice-list" role="group" aria-label="Mission answer choices"></div>
+        <div class="mission-actions">
+          <button id="repeat-definition-btn" type="button">Repeat Definition</button>
+          <button id="mission-hint-btn" type="button">Hint</button>
+          <button id="mission-submit-btn" type="button">Submit Choice</button>
+        </div>
+        <p id="mission-feedback" class="hint" aria-live="polite"></p>
       </section>
 
       <div class="canvas-wrap">
@@ -167,7 +186,7 @@
           <li>Click <strong>Load Terms .txt</strong> and choose a compatible terms file (for example, <code>terms.txt</code>).</li>
           <li>Check that the source line says a file is loaded.</li>
           <li>Select one or more topics.</li>
-          <li>Choose game type, choices per round, and speed.</li>
+          <li>Choose game type and speed (or Mission Accessible options when that mode is selected).</li>
           <li>Click <strong>Start Mission</strong>.</li>
         </ol>
         <p><strong>Terms File Format</strong></p>
@@ -178,13 +197,13 @@ Another term: Another definition</pre>
         <p><strong>Game Modes</strong></p>
         <p><strong>Term Invaders:</strong> move left/right to choose a lane, then fire at the term that matches the current definition.</p>
         <p><strong>Banner Drive:</strong> steer left/right and pass under the banner that matches the current definition.</p>
+        <p><strong>Mission Accessible:</strong> fully DOM-based gameplay with three large answer choices per prompt, optional timing, and keyboard-first input.</p>
         <p><strong>Controls</strong></p>
-        <p>Buttons: Left, Right, and Fire (Term Invaders only). Keyboard: arrow keys to move, <kbd>Enter</kbd>/<kbd>Space</kbd> to fire in Term Invaders, <kbd>P</kbd> to pause/resume, and <kbd>K</kbd> to skip.</p>
-        <p>The <strong>Accessible Interaction</strong> panel provides semantic answer-choice buttons for both game modes if you prefer non-canvas interaction.</p>
-        <p>Accessibility Mode presets: <strong>Off (Standard)</strong> keeps default gameplay, <strong>Assisted</strong> enables accessible answer controls and support visuals, and <strong>Accessible</strong> also auto-pauses each new prompt and can use scan selection.</p>
-        <p>If you change settings during a mission, the game auto-pauses. Changing speed or choices resets the current wave/set, and changing game mode requires clicking <strong>Start Mission</strong> (or switching back to the original mode) before you can resume.</p>
+        <p>Term Invaders/Banner Drive: Left/Right controls or arrow keys, <kbd>P</kbd> pause/resume, <kbd>K</kbd> skip. Fire controls apply to Term Invaders only.</p>
+        <p>Mission Accessible: use <kbd>1</kbd>, <kbd>2</kbd>, <kbd>3</kbd> to select choices, <kbd>Enter</kbd> or <kbd>Space</kbd> to submit, <kbd>H</kbd> for hint, <kbd>R</kbd> to repeat the definition, plus <kbd>P</kbd> and <kbd>K</kbd>.</p>
+        <p>If you change settings during a mission, the game auto-pauses. Changing speed resets the current wave/set in Term Invaders and Banner Drive, while Mission Accessible applies updated options to the next prompt.</p>
         <p><strong>Scoring</strong></p>
-        <p>Correct answers add points. Wrong answers reduce points. In Term Invaders, city integrity drops when terms reach the city.</p>
+        <p>All game types use three choices per prompt. Correct answers add points and wrong answers reduce points. In Term Invaders, city integrity drops when terms reach the city.</p>
       </div>
     </div>
   </div>

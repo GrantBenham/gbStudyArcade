@@ -13,9 +13,9 @@
   const SCOREBOARD_KEY = "studyArcadeScoreboard";
   const DEFAULT_FALL_SPEED = "normal";
   const DEFAULT_GAME_MODE = "classic";
-  const DEFAULT_CHOICES_PER_ROUND = 3;
+  const DEFAULT_MISSION_PACE = "untimed";
+  const DEFAULT_MISSION_TIME_LIMIT_SECONDS = 30;
   const DEFAULT_CLASSIC_START_LANE = Math.floor(LANE_COUNT / 2);
-  const DEFAULT_ACCESSIBILITY_MODE = "standard";
 
   const FALL_SPEED_MULTIPLIER = {
     slow: 0.7,
@@ -43,9 +43,13 @@
     selectAllTopicsBtn: document.getElementById("select-all-topics-btn"),
     clearTopicsBtn: document.getElementById("clear-topics-btn"),
     gameMode: document.getElementById("game-mode"),
-    choicesPerRound: document.getElementById("choices-per-round"),
     fallSpeed: document.getElementById("fall-speed"),
-    accessibilityMode: document.getElementById("accessibility-mode"),
+    speedField: document.getElementById("speed-field"),
+    missionSettings: document.getElementById("mission-settings"),
+    missionPace: document.getElementById("mission-pace"),
+    missionTimeLimit: document.getElementById("mission-time-limit"),
+    missionConfirm: document.getElementById("mission-confirm"),
+    missionHints: document.getElementById("mission-hints"),
     reduceMotion: document.getElementById("reduce-motion"),
     highContrast: document.getElementById("high-contrast"),
     startBtn: document.getElementById("start-btn"),
@@ -61,11 +65,16 @@
     cityText: document.getElementById("city-text"),
     remainingText: document.getElementById("remaining-text"),
     definitionText: document.getElementById("definition-text"),
-    accessibleControls: document.getElementById("accessible-controls"),
-    accessibleStatus: document.getElementById("accessible-status"),
-    accessibleChoiceList: document.getElementById("accessible-choice-list"),
+    missionArena: document.getElementById("mission-accessible-arena"),
+    missionStatus: document.getElementById("mission-status"),
+    missionRoundText: document.getElementById("mission-round-text"),
+    missionStreakText: document.getElementById("mission-streak-text"),
+    missionTimerText: document.getElementById("mission-timer-text"),
+    missionChoiceList: document.getElementById("mission-choice-list"),
+    missionFeedback: document.getElementById("mission-feedback"),
     repeatDefinitionBtn: document.getElementById("repeat-definition-btn"),
-    toggleScanBtn: document.getElementById("toggle-scan-btn"),
+    missionHintBtn: document.getElementById("mission-hint-btn"),
+    missionSubmitBtn: document.getElementById("mission-submit-btn"),
     canvas: document.getElementById("game-canvas"),
     scoresList: document.getElementById("scores-list"),
     clearScoresBtn: document.getElementById("clear-scores-btn"),
@@ -99,7 +108,7 @@
   setTermsSourceIndicator("none");
   setDefinitionText("Load a terms .txt file, then press Start Mission.");
   updateStartAvailability();
-  renderAccessibleChoices();
+  renderMissionAccessibleArena();
   requestAnimationFrame(loop);
 
   function createGameState() {
@@ -126,12 +135,16 @@
       beam: null,
       pulseAt: 0,
       modeChangeRestartRequired: false,
-      accessibilityQuestionPause: false,
-      pendingAccessibleChoiceKey: "",
-      lastPromptAnnouncementKey: "",
-      scanEnabled: false,
-      scanIndex: -1,
-      nextScanAt: 0,
+      missionRound: null,
+      missionSelectedIndex: -1,
+      missionFeedback: "",
+      missionAwaitingConfirm: false,
+      missionStreak: 0,
+      missionBestStreak: 0,
+      missionAnswered: 0,
+      missionTimedOut: 0,
+      missionWrong: 0,
+      pauseStartedAt: 0,
       nextRoundAt: 0,
       lastNow: performance.now()
     };
@@ -144,73 +157,29 @@
     return Array.from({ length: LANE_COUNT }, (_, lane) => padding + lane * step);
   }
 
-  function getAccessibilityMode() {
-    return els.accessibilityMode && els.accessibilityMode.value
-      ? els.accessibilityMode.value
-      : DEFAULT_ACCESSIBILITY_MODE;
-  }
-
-  function getAccessibilityProfile() {
-    const mode = getAccessibilityMode();
-    if (mode === "accessible") {
-      return {
-        domInteractionEnabled: true,
-        largerText: true,
-        simplifiedVisuals: true,
-        strongGuides: true,
-        keyboardChoiceHotkeys: true,
-        keepFocusInAccessibleLayer: true,
-        autoPauseOnNewPrompt: true,
-        responseSpeedMultiplier: 0.62,
-        penaltyMultiplier: 0.5,
-        confirmAnswer: true,
-        switchScanAvailable: true
-      };
-    }
-    if (mode === "assisted") {
-      return {
-        domInteractionEnabled: true,
-        largerText: true,
-        simplifiedVisuals: true,
-        strongGuides: true,
-        keyboardChoiceHotkeys: true,
-        keepFocusInAccessibleLayer: true,
-        autoPauseOnNewPrompt: false,
-        responseSpeedMultiplier: 0.82,
-        penaltyMultiplier: 0.75,
-        confirmAnswer: false,
-        switchScanAvailable: false
-      };
-    }
-    return {
-      domInteractionEnabled: false,
-      largerText: false,
-      simplifiedVisuals: false,
-      strongGuides: false,
-      keyboardChoiceHotkeys: false,
-      keepFocusInAccessibleLayer: false,
-      autoPauseOnNewPrompt: false,
-      responseSpeedMultiplier: 1,
-      penaltyMultiplier: 1,
-      confirmAnswer: false,
-      switchScanAvailable: false
-    };
-  }
-
   function getPenaltyAmount(baseAmount) {
-    const profile = getAccessibilityProfile();
-    return Math.max(1, Math.round(baseAmount * profile.penaltyMultiplier));
+    return Math.max(1, Math.round(baseAmount));
   }
 
-  function applyAccessibilityModeUI() {
-    const mode = getAccessibilityMode();
-    document.body.classList.toggle("a11y-assisted", mode === "assisted");
-    document.body.classList.toggle("a11y-accessible", mode === "accessible");
-    if (mode !== "accessible") {
-      state.game.scanEnabled = false;
-      state.game.scanIndex = -1;
-    }
-    updateScanToggleButton();
+  function isMissionAccessibleMode(mode) {
+    return (mode || state.game.mode) === "mission_accessible";
+  }
+
+  function isMissionTimed() {
+    return (els.missionPace && els.missionPace.value) === "timed";
+  }
+
+  function getMissionTimeLimitMs() {
+    const seconds = Number(els.missionTimeLimit && els.missionTimeLimit.value) || DEFAULT_MISSION_TIME_LIMIT_SECONDS;
+    return Math.max(5, seconds) * 1000;
+  }
+
+  function isMissionConfirmEnabled() {
+    return !!(els.missionConfirm && els.missionConfirm.checked);
+  }
+
+  function areMissionHintsEnabled() {
+    return !!(els.missionHints && els.missionHints.checked);
   }
 
   function bindEvents() {
@@ -241,7 +210,10 @@
       event.target.value = "";
     });
 
-    [els.gameMode, els.choicesPerRound, els.fallSpeed, els.accessibilityMode, els.reduceMotion, els.highContrast].forEach((control) => {
+    [els.gameMode, els.fallSpeed, els.missionPace, els.missionTimeLimit, els.missionConfirm, els.missionHints, els.reduceMotion, els.highContrast].forEach((control) => {
+      if (!control) {
+        return;
+      }
       control.addEventListener("focus", () => {
         pauseForSettingsEdit();
       });
@@ -276,18 +248,6 @@
       persistSettings();
     });
 
-    els.choicesPerRound.addEventListener("change", () => {
-      const activeMission = state.game.running && !state.game.gameOver;
-      if (activeMission) {
-        pauseForSettingsEdit();
-        const resetNow = resetWaveForMidMissionSettingsChange();
-        announce(resetNow
-          ? "Game paused. Choices per round updated and current wave reset. Press Resume to continue."
-          : "Game paused. Choices per round updated for upcoming rounds.");
-      }
-      persistSettings();
-    });
-
     els.fallSpeed.addEventListener("change", () => {
       const activeMission = state.game.running && !state.game.gameOver;
       if (activeMission) {
@@ -300,24 +260,25 @@
       persistSettings();
     });
 
-    els.accessibilityMode.addEventListener("change", () => {
-      const activeMission = state.game.running && !state.game.gameOver;
-      const profile = getAccessibilityProfile();
-      if (activeMission) {
-        pauseForSettingsEdit();
-        const resetNow = resetWaveForMidMissionSettingsChange();
-        announce(resetNow
-          ? "Game paused. Accessibility mode updated and current wave reset."
-          : "Game paused. Accessibility mode updated.");
-      } else {
-        announce(`Accessibility mode set to ${els.accessibilityMode.options[els.accessibilityMode.selectedIndex].text}.`);
+    [els.missionPace, els.missionTimeLimit, els.missionConfirm, els.missionHints].forEach((control) => {
+      if (!control) {
+        return;
       }
-      if (!profile.switchScanAvailable) {
-        state.game.scanEnabled = false;
-      }
-      applyAccessibilityModeUI();
-      persistSettings();
-      renderAccessibleChoices();
+      control.addEventListener("change", () => {
+        const activeMission = state.game.running && !state.game.gameOver;
+        if (control === els.missionPace && els.missionTimeLimit) {
+          els.missionTimeLimit.disabled = !isMissionTimed();
+        }
+        if (activeMission && isMissionAccessibleMode()) {
+          pauseForSettingsEdit();
+          const resetNow = resetWaveForMidMissionSettingsChange();
+          announce(resetNow
+            ? "Game paused. Mission Accessible options updated and next prompt refreshed."
+            : "Game paused. Mission Accessible options updated.");
+        }
+        persistSettings();
+        renderMissionAccessibleArena();
+      });
     });
 
     els.initials.addEventListener("blur", () => {
@@ -362,7 +323,8 @@
     els.fireBtn.addEventListener("click", fireAtSelectedLane);
     els.clearScoresBtn.addEventListener("click", clearScores);
     els.repeatDefinitionBtn.addEventListener("click", repeatCurrentDefinition);
-    els.toggleScanBtn.addEventListener("click", toggleSwitchScan);
+    els.missionHintBtn.addEventListener("click", requestMissionHint);
+    els.missionSubmitBtn.addEventListener("click", submitMissionAccessibleChoice);
     els.canvas.addEventListener("click", handleCanvasClick);
 
     document.addEventListener("keydown", (event) => {
@@ -398,25 +360,30 @@
         repeatCurrentDefinition();
         return;
       }
-      if (key.toLowerCase() === "s" && getAccessibilityProfile().switchScanAvailable) {
-        event.preventDefault();
-        toggleSwitchScan();
-        return;
-      }
-      if (key >= "1" && key <= "3" && getAccessibilityProfile().keyboardChoiceHotkeys) {
-        const activated = activateAccessibleChoiceByNumber(Number(key));
-        if (activated) {
+      if (isMissionAccessibleMode()) {
+        if (key >= "1" && key <= "3") {
           event.preventDefault();
+          chooseMissionAccessibleOption(Number(key) - 1);
+          return;
+        }
+        if (key.toLowerCase() === "h") {
+          event.preventDefault();
+          requestMissionHint();
+          return;
+        }
+        if (key === " " || key === "Enter") {
+          event.preventDefault();
+          submitMissionAccessibleChoice();
           return;
         }
       }
       if (key >= "1" && key <= "3" && state.game.mode === "classic") {
         event.preventDefault();
         selectLane(Number(key) - 1);
-      } else if (key === "ArrowLeft") {
+      } else if (key === "ArrowLeft" && !isMissionAccessibleMode()) {
         event.preventDefault();
         moveLeftControl(true);
-      } else if (key === "ArrowRight") {
+      } else if (key === "ArrowRight" && !isMissionAccessibleMode()) {
         event.preventDefault();
         moveRightControl(true);
       } else if (key === " " || key === "Enter") {
@@ -466,7 +433,7 @@
       els.helpCloseBtn.focus();
     }
     announce("Help opened.");
-    renderAccessibleChoices();
+    renderMissionAccessibleArena();
   }
 
   function closeHelpModal(restoreFocus) {
@@ -489,7 +456,7 @@
       state.lastFocusedElement.focus();
     }
     announce("Help closed.");
-    renderAccessibleChoices();
+    renderMissionAccessibleArena();
   }
 
   function trapHelpFocus(event) {
@@ -516,28 +483,59 @@
     els.reduceMotion.checked = state.settings.reduceMotion ?? reduceBySystem;
     els.highContrast.checked = true;
     els.gameMode.value = state.settings.gameMode || DEFAULT_GAME_MODE;
-    els.choicesPerRound.value = String(state.settings.choicesPerRound || DEFAULT_CHOICES_PER_ROUND);
     els.fallSpeed.value = state.settings.fallSpeed || DEFAULT_FALL_SPEED;
-    els.accessibilityMode.value = state.settings.accessibilityMode || DEFAULT_ACCESSIBILITY_MODE;
+    if (els.missionPace) {
+      els.missionPace.value = state.settings.missionPace || DEFAULT_MISSION_PACE;
+    }
+    if (els.missionTimeLimit) {
+      const selectedTime = Number(state.settings.missionTimeLimitSeconds) || DEFAULT_MISSION_TIME_LIMIT_SECONDS;
+      els.missionTimeLimit.value = String(selectedTime);
+      els.missionTimeLimit.disabled = !isMissionTimed();
+    }
+    if (els.missionConfirm) {
+      els.missionConfirm.checked = !!state.settings.missionConfirm;
+    }
+    if (els.missionHints) {
+      els.missionHints.checked = state.settings.missionHints ?? true;
+    }
     if (state.settings.initials) {
       els.initials.value = state.settings.initials;
     }
     document.body.classList.toggle("high-contrast", true);
-    applyAccessibilityModeUI();
     updateModeUI(els.gameMode.value);
   }
 
   function updateModeUI(mode) {
     const selectedMode = mode || DEFAULT_GAME_MODE;
     const isClassic = selectedMode === "classic";
-    els.laneControlsSection.classList.toggle("hidden", false);
+    const isMission = isMissionAccessibleMode(selectedMode);
+    els.laneControlsSection.classList.toggle("hidden", isMission);
+    els.canvas.parentElement.classList.toggle("hidden", isMission);
+    if (els.speedField) {
+      els.speedField.classList.toggle("hidden", isMission);
+    }
+    if (els.missionSettings) {
+      els.missionSettings.classList.toggle("hidden", !isMission);
+    }
+    if (els.missionArena) {
+      els.missionArena.classList.toggle("hidden", !isMission);
+    }
+    if (els.missionTimeLimit) {
+      els.missionTimeLimit.disabled = !isMissionTimed();
+    }
+    if (els.skipBtn) {
+      els.skipBtn.textContent = isMission ? "Skip Prompt" : "Skip Definition";
+    }
     els.cityHudItem.classList.toggle("hidden", !isClassic);
     els.fireBtn.disabled = !state.game.running || !isClassic;
     if (isClassic) {
       els.helpText.innerHTML = "Use Left/Right controls, <kbd>1</kbd> to <kbd>3</kbd>, or arrow keys to select a lane. Press Fire, <kbd>Enter</kbd>, or <kbd>Space</kbd> to shoot. Use <kbd>P</kbd> to pause and <kbd>K</kbd> to skip definition.";
-    } else {
+    } else if (selectedMode === "banner_drive") {
       els.helpText.innerHTML = "Use Left/Right controls or <kbd>Left</kbd>/<kbd>Right</kbd> arrows to steer smoothly. Guide the car under the correct banner. Use <kbd>P</kbd> to pause and <kbd>K</kbd> to skip current set.";
+    } else {
+      els.helpText.innerHTML = "Mission Accessible: choose with <kbd>1</kbd>, <kbd>2</kbd>, or <kbd>3</kbd>, then submit with <kbd>Enter</kbd> or <kbd>Space</kbd>. Press <kbd>H</kbd> for hint, <kbd>R</kbd> to repeat the definition, <kbd>P</kbd> to pause, and <kbd>K</kbd> to skip.";
     }
+    renderMissionAccessibleArena();
   }
 
   async function loadTermsFromUserFile(file) {
@@ -698,6 +696,9 @@
       selectLane(Math.max(0, state.game.selectedLane - 1));
       return;
     }
+    if (state.game.mode !== "banner_drive") {
+      return;
+    }
     if (fromKeyboard === true) {
       state.game.leftPressed = true;
       return;
@@ -715,6 +716,9 @@
     }
     if (state.game.mode === "classic") {
       selectLane(Math.min(LANE_COUNT - 1, state.game.selectedLane + 1));
+      return;
+    }
+    if (state.game.mode !== "banner_drive") {
       return;
     }
     if (fromKeyboard === true) {
@@ -798,14 +802,19 @@
     state.game.activeBannerSets = [];
     state.game.lastBannerSpawnAt = 0;
     state.game.car = null;
-    state.game.pendingAccessibleChoiceKey = "";
-    state.game.lastPromptAnnouncementKey = "";
-    state.game.scanEnabled = false;
-    state.game.scanIndex = -1;
+    state.game.missionRound = null;
+    state.game.missionSelectedIndex = -1;
+    state.game.missionFeedback = "";
+    state.game.missionAwaitingConfirm = false;
+    state.game.missionStreak = 0;
+    state.game.missionBestStreak = 0;
+    state.game.missionAnswered = 0;
+    state.game.missionTimedOut = 0;
+    state.game.missionWrong = 0;
 
     if (state.game.mode === "classic") {
       setDefinitionText("Preparing first wave...");
-    } else {
+    } else if (state.game.mode === "banner_drive") {
       state.game.car = {
         x: laneCenters[DEFAULT_CLASSIC_START_LANE],
         y: Math.round(CANVAS_HEIGHT * 0.7),
@@ -817,6 +826,9 @@
       };
       state.game.lastBannerSpawnAt = performance.now() - getBannerSpawnInterval();
       setDefinitionText("Preparing first banner set...");
+    } else {
+      setDefinitionText("Preparing mission prompt...");
+      state.game.nextRoundAt = performance.now();
     }
 
     toggleGameButtons(true);
@@ -824,13 +836,19 @@
     updateModeUI(state.game.mode);
     if (state.game.mode === "classic") {
       startNextRound(performance.now());
-    } else {
+    } else if (state.game.mode === "banner_drive") {
       spawnBannerSet(performance.now());
+    } else {
+      startNextMissionAccessiblePrompt();
     }
     updateHud();
     renderCorrectTerms();
-    announce("Mission started. Match the definition to the correct term.");
-    focusAccessibleLayerAfterAction();
+    if (state.game.mode === "mission_accessible") {
+      announce("Mission started. Use the Mission Accessible arena to choose and submit answers.");
+    } else {
+      announce("Mission started. Match the definition to the correct term.");
+      els.canvas.focus();
+    }
   }
 
   function buildSelectedPairs() {
@@ -847,10 +865,9 @@
       return false;
     }
     state.game.paused = true;
-    state.game.accessibilityQuestionPause = false;
+    state.game.pauseStartedAt = performance.now();
     state.game.leftPressed = false;
     state.game.rightPressed = false;
-    clearPendingAccessibleChoice();
     els.pauseBtn.textContent = "Resume";
     return true;
   }
@@ -862,19 +879,27 @@
     }
     if (state.game.modeChangeRestartRequired) {
       state.game.paused = true;
-      state.game.accessibilityQuestionPause = false;
       els.pauseBtn.disabled = true;
       els.pauseBtn.textContent = "Restart Required";
       setDefinitionText("Mode change selected. Start Mission to switch modes, or switch back to continue this mission.");
-      renderAccessibleChoices();
+      renderMissionAccessibleArena();
       return;
     }
     els.pauseBtn.disabled = false;
     els.pauseBtn.textContent = state.game.paused ? "Resume" : "Pause";
-    renderAccessibleChoices();
+    renderMissionAccessibleArena();
   }
 
   function restoreDefinitionForCurrentMission() {
+    if (isMissionAccessibleMode()) {
+      if (state.game.missionRound && state.game.missionRound.target) {
+        setDefinitionText(state.game.missionRound.target.definition);
+      } else {
+        setDefinitionText("Waiting for next Mission Accessible prompt...");
+      }
+      renderMissionAccessibleArena();
+      return;
+    }
     if (state.game.mode === "banner_drive") {
       updateBannerDefinition();
       return;
@@ -894,9 +919,21 @@
     if (!state.game.running || state.game.gameOver) {
       return false;
     }
-    state.game.accessibilityQuestionPause = false;
-    clearPendingAccessibleChoice();
-    state.game.lastPromptAnnouncementKey = "";
+    if (isMissionAccessibleMode()) {
+      const round = state.game.missionRound;
+      if (!round || !round.target) {
+        return false;
+      }
+      reinsertTarget(round.target);
+      state.game.missionRound = null;
+      state.game.missionSelectedIndex = -1;
+      state.game.missionFeedback = "Mission settings updated. Next prompt will use the new settings.";
+      state.game.nextRoundAt = performance.now();
+      setDefinitionText("Mission settings updated. Prompt will refresh when you resume.");
+      updateHud();
+      renderMissionAccessibleArena();
+      return true;
+    }
     if (state.game.mode === "classic") {
       if (!state.game.activeTerms.length) {
         return false;
@@ -937,24 +974,29 @@
     }
     state.game.paused = !state.game.paused;
     if (state.game.paused) {
-      state.game.accessibilityQuestionPause = false;
+      state.game.pauseStartedAt = performance.now();
       state.game.leftPressed = false;
       state.game.rightPressed = false;
-      clearPendingAccessibleChoice();
     } else {
-      state.game.accessibilityQuestionPause = false;
+      state.game.pauseStartedAt = 0;
     }
     els.pauseBtn.textContent = state.game.paused ? "Resume" : "Pause";
     announce(state.game.paused ? "Game paused." : "Game resumed.");
     if (!state.game.paused) {
       state.game.lastNow = performance.now();
-      focusAccessibleLayerAfterAction();
+      if (!isMissionAccessibleMode()) {
+        els.canvas.focus();
+      }
     }
-    renderAccessibleChoices();
+    renderMissionAccessibleArena();
   }
 
   function skipDefinition() {
     if (!state.game.running || state.game.gameOver || state.game.paused) {
+      return;
+    }
+    if (isMissionAccessibleMode()) {
+      skipMissionAccessiblePrompt();
       return;
     }
     if (state.game.mode === "classic") {
@@ -1058,8 +1100,7 @@
       return;
     }
 
-    const choiceCount = Math.max(2, Math.min(3, Number(els.choicesPerRound.value) || DEFAULT_CHOICES_PER_ROUND));
-    const waveSize = Math.min(choiceCount, state.game.remainingTargets.length);
+    const waveSize = Math.min(3, state.game.remainingTargets.length);
     const wavePairs = [];
     for (let i = 0; i < waveSize; i += 1) {
       wavePairs.push(state.game.remainingTargets.pop());
@@ -1086,14 +1127,12 @@
   function setNextClassicTargetFromActiveTerms() {
     if (!state.game.activeTerms.length) {
       state.game.currentTarget = null;
-      state.game.lastPromptAnnouncementKey = "";
       setDefinitionText("Loading next wave...");
       return;
     }
     const targetIndex = Math.floor(Math.random() * state.game.activeTerms.length);
     state.game.currentTarget = state.game.activeTerms[targetIndex];
     setDefinitionText(state.game.currentTarget.definition);
-    handleNewPromptAnnouncement();
   }
 
   function buildDistractors(target, needed) {
@@ -1136,8 +1175,7 @@
     }
 
     const target = state.game.remainingTargets.pop();
-    const choiceCount = Math.max(2, Math.min(3, Number(els.choicesPerRound.value) || DEFAULT_CHOICES_PER_ROUND));
-    const distractors = buildDistractors(target, choiceCount - 1);
+    const distractors = buildDistractors(target, 2);
     const roundPairs = shuffle([target, ...distractors]);
     const lanePool = shuffle([0, 1, 2]).slice(0, roundPairs.length);
     const gateY = state.game.car
@@ -1190,7 +1228,6 @@
     const leadSet = getLeadBannerSet();
     if (!leadSet) {
       state.game.currentTarget = null;
-      state.game.lastPromptAnnouncementKey = "";
       if (state.game.remainingTargets.length) {
         setDefinitionText("Waiting for next banner set...");
       } else {
@@ -1200,7 +1237,6 @@
     }
     state.game.currentTarget = leadSet.target;
     setDefinitionText(leadSet.definition);
-    handleNewPromptAnnouncement();
   }
 
   function reinsertTarget(target) {
@@ -1251,7 +1287,7 @@
   function scaledFallSpeed() {
     const selected = els.fallSpeed.value || DEFAULT_FALL_SPEED;
     const multiplier = FALL_SPEED_MULTIPLIER[selected] || FALL_SPEED_MULTIPLIER.normal;
-    return 18 * multiplier * getAccessibilityProfile().responseSpeedMultiplier;
+    return 18 * multiplier;
   }
 
   function scaledBannerSpeed() {
@@ -1271,10 +1307,10 @@
     state.game.gameOver = true;
     state.game.running = false;
     state.game.won = won;
-    state.game.accessibilityQuestionPause = false;
-    state.game.scanEnabled = false;
     state.game.activeTerms = [];
     state.game.currentTarget = null;
+    state.game.missionRound = null;
+    state.game.missionSelectedIndex = -1;
     toggleGameButtons(false);
     saveScore();
     announce(`${won ? "Mission complete" : "City overrun"}. Final score ${state.game.score}.`, true);
@@ -1345,21 +1381,11 @@
       : "Local storage is blocked by browser privacy settings. Scores will not persist after closing.";
   }
 
-  function setAccessibleStatus(text) {
-    if (!els.accessibleStatus) {
-      return;
-    }
-    els.accessibleStatus.textContent = text;
-  }
-
-  function clearAccessibleChoices() {
-    if (!els.accessibleChoiceList) {
-      return;
-    }
-    els.accessibleChoiceList.innerHTML = "";
-  }
-
   function getRemainingPromptCount() {
+    if (isMissionAccessibleMode()) {
+      const pendingCurrent = state.game.missionRound && !state.game.missionRound.resolved ? 1 : 0;
+      return Math.max(0, state.game.remainingTargets.length + pendingCurrent);
+    }
     const unresolvedActive = state.game.activeTerms.filter((term) => term.state !== "correct_flash").length;
     let remaining = state.game.remainingTargets.length + unresolvedActive;
     if (state.game.mode === "banner_drive") {
@@ -1369,140 +1395,11 @@
     return Math.max(0, remaining);
   }
 
-  function buildPromptProgressText() {
-    const total = Math.max(1, state.game.allPairs.length || getRemainingPromptCount());
-    const remaining = getRemainingPromptCount();
-    const current = Math.max(1, total - remaining + 1);
-    return `Question ${current} of ${total}`;
-  }
-
-  function updateScanToggleButton() {
-    if (!els.toggleScanBtn) {
-      return;
+  function formatMissionTime(ms) {
+    if (!Number.isFinite(ms) || ms < 0) {
+      return "0s";
     }
-    const canScan = getAccessibilityProfile().switchScanAvailable;
-    els.toggleScanBtn.classList.toggle("hidden", !canScan);
-    if (!canScan) {
-      els.toggleScanBtn.setAttribute("aria-pressed", "false");
-      els.toggleScanBtn.textContent = "Scan: Off";
-      return;
-    }
-    els.toggleScanBtn.setAttribute("aria-pressed", state.game.scanEnabled ? "true" : "false");
-    els.toggleScanBtn.textContent = state.game.scanEnabled ? "Scan: On" : "Scan: Off";
-  }
-
-  function clearPendingAccessibleChoice() {
-    state.game.pendingAccessibleChoiceKey = "";
-  }
-
-  function focusAccessibleLayerAfterAction() {
-    const profile = getAccessibilityProfile();
-    if (!profile.keepFocusInAccessibleLayer) {
-      els.canvas.focus();
-      return;
-    }
-    const firstChoice = els.accessibleChoiceList
-      ? els.accessibleChoiceList.querySelector("button.accessible-choice-btn")
-      : null;
-    if (firstChoice) {
-      firstChoice.focus();
-      return;
-    }
-    if (els.repeatDefinitionBtn) {
-      els.repeatDefinitionBtn.focus();
-    }
-  }
-
-  function allowInteractionWhileQuestionPaused() {
-    return state.game.paused && state.game.accessibilityQuestionPause;
-  }
-
-  function maybeResumeFromQuestionPause() {
-    if (!state.game.accessibilityQuestionPause) {
-      return;
-    }
-    state.game.accessibilityQuestionPause = false;
-    state.game.paused = false;
-    state.game.lastNow = performance.now();
-    els.pauseBtn.textContent = "Pause";
-  }
-
-  function runAccessibleChoice(choiceKey, label, action) {
-    const profile = getAccessibilityProfile();
-    if (profile.confirmAnswer) {
-      if (state.game.pendingAccessibleChoiceKey !== choiceKey) {
-        state.game.pendingAccessibleChoiceKey = choiceKey;
-        setAccessibleStatus(`Confirm selection: ${label}. Activate the same choice again to submit.`);
-        return;
-      }
-      clearPendingAccessibleChoice();
-    }
-    action();
-    maybeResumeFromQuestionPause();
-    renderAccessibleChoices();
-    focusAccessibleLayerAfterAction();
-  }
-
-  function addAccessibleChoiceButton(label, actionKey, onClick) {
-    if (!els.accessibleChoiceList) {
-      return;
-    }
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "accessible-choice-btn";
-    button.dataset.choiceKey = actionKey;
-    button.textContent = label;
-    button.addEventListener("click", () => runAccessibleChoice(actionKey, label, onClick));
-    els.accessibleChoiceList.appendChild(button);
-  }
-
-  function activateAccessibleChoiceByNumber(choiceNumber) {
-    if (!els.accessibleChoiceList || choiceNumber < 1) {
-      return false;
-    }
-    const buttons = els.accessibleChoiceList.querySelectorAll("button.accessible-choice-btn");
-    const target = buttons[choiceNumber - 1];
-    if (!target || target.disabled || target.classList.contains("hidden")) {
-      return false;
-    }
-    target.click();
-    return true;
-  }
-
-  function toggleSwitchScan() {
-    if (!getAccessibilityProfile().switchScanAvailable) {
-      return;
-    }
-    state.game.scanEnabled = !state.game.scanEnabled;
-    state.game.scanIndex = -1;
-    state.game.nextScanAt = performance.now();
-    updateScanToggleButton();
-    announce(state.game.scanEnabled ? "Scan mode enabled." : "Scan mode disabled.");
-  }
-
-  function updateAccessibleScan(now) {
-    if (!state.game.scanEnabled || !getAccessibilityProfile().switchScanAvailable) {
-      return;
-    }
-    if (!state.game.running || state.game.gameOver) {
-      return;
-    }
-    if (state.game.paused && !state.game.accessibilityQuestionPause) {
-      return;
-    }
-    if (!els.accessibleChoiceList) {
-      return;
-    }
-    const buttons = Array.from(els.accessibleChoiceList.querySelectorAll("button.accessible-choice-btn"));
-    if (!buttons.length) {
-      return;
-    }
-    if (now < state.game.nextScanAt) {
-      return;
-    }
-    state.game.scanIndex = (state.game.scanIndex + 1) % buttons.length;
-    state.game.nextScanAt = now + 1100;
-    buttons[state.game.scanIndex].focus();
+    return `${Math.ceil(ms / 1000)}s`;
   }
 
   function repeatCurrentDefinition() {
@@ -1515,149 +1412,244 @@
     announce(`Definition: ${prompt}`);
   }
 
-  function announcePromptForAssistiveTech(choiceLabels) {
-    const profile = getAccessibilityProfile();
-    if (!profile.domInteractionEnabled || !state.game.currentTarget) {
+  function getMissionHintText(round) {
+    if (!round || !round.target) {
+      return "";
+    }
+    const firstLetter = String(round.target.term || "").trim().charAt(0).toUpperCase() || "?";
+    const topic = round.target.topic ? ` Topic: ${round.target.topic}.` : "";
+    return `Hint: answer starts with "${firstLetter}".${topic}`;
+  }
+
+  function requestMissionHint() {
+    if (!isMissionAccessibleMode() || !state.game.running || state.game.paused || state.game.gameOver) {
       return;
     }
-    const progress = buildPromptProgressText();
-    const promptKey = `${state.game.mode}|${state.game.currentTarget.term}|${progress}|${choiceLabels.join("|")}`;
-    if (promptKey === state.game.lastPromptAnnouncementKey) {
+    if (!areMissionHintsEnabled()) {
+      state.game.missionFeedback = "Hints are disabled in Mission Accessible options.";
+      renderMissionAccessibleArena();
       return;
     }
-    state.game.lastPromptAnnouncementKey = promptKey;
-    const choiceText = choiceLabels.length ? ` Choices: ${choiceLabels.join(", ")}.` : "";
-    announce(`${progress}. ${state.game.currentTarget.definition}.${choiceText}`);
-    if (profile.autoPauseOnNewPrompt && state.game.running && !state.game.gameOver) {
-      state.game.paused = true;
-      state.game.accessibilityQuestionPause = true;
-      state.game.leftPressed = false;
-      state.game.rightPressed = false;
-      els.pauseBtn.textContent = "Resume";
+    const round = state.game.missionRound;
+    if (!round || round.resolved) {
+      return;
+    }
+    state.game.missionFeedback = getMissionHintText(round);
+    renderMissionAccessibleArena();
+    announce(state.game.missionFeedback);
+  }
+
+  function chooseMissionAccessibleOption(index) {
+    if (!isMissionAccessibleMode() || !state.game.running || state.game.paused || state.game.gameOver) {
+      return;
+    }
+    const round = state.game.missionRound;
+    if (!round || round.resolved || index < 0 || index >= round.options.length) {
+      return;
+    }
+    state.game.missionSelectedIndex = index;
+    state.game.missionAwaitingConfirm = !!isMissionConfirmEnabled();
+    if (isMissionConfirmEnabled()) {
+      state.game.missionFeedback = `Selected choice ${index + 1}. Press Submit Choice or Enter to confirm.`;
+    } else {
+      state.game.missionFeedback = "";
+      submitMissionAccessibleChoice();
+      return;
+    }
+    renderMissionAccessibleArena();
+  }
+
+  function submitMissionAccessibleChoice() {
+    if (!isMissionAccessibleMode() || !state.game.running || state.game.paused || state.game.gameOver) {
+      return;
+    }
+    const round = state.game.missionRound;
+    if (!round || round.resolved) {
+      return;
+    }
+    if (state.game.missionSelectedIndex < 0 || state.game.missionSelectedIndex >= round.options.length) {
+      state.game.missionFeedback = "Select a choice first (1, 2, or 3).";
+      renderMissionAccessibleArena();
+      return;
+    }
+    const chosenPair = round.options[state.game.missionSelectedIndex];
+    resolveMissionAccessibleRound(chosenPair && chosenPair.term === round.target.term);
+  }
+
+  function resolveMissionAccessibleRound(isCorrect, timeout) {
+    const round = state.game.missionRound;
+    if (!round || round.resolved) {
+      return;
+    }
+    round.resolved = true;
+    state.game.missionAnswered += 1;
+    state.game.roundsCompleted += 1;
+
+    if (isCorrect) {
+      const bonus = isMissionTimed() && Number.isFinite(round.timeLeftMs)
+        ? Math.max(0, Math.round(round.timeLeftMs / 250))
+        : 0;
+      state.game.score += 100 + bonus;
+      state.game.missionStreak += 1;
+      state.game.missionBestStreak = Math.max(state.game.missionBestStreak, state.game.missionStreak);
+      state.game.correctTerms.push(round.target.term);
+      renderCorrectTerms();
+      state.game.missionFeedback = bonus > 0 ? `Correct! +${100 + bonus} points.` : "Correct! +100 points.";
+    } else {
+      state.game.score = Math.max(0, state.game.score - getPenaltyAmount(ROUND_CONFIG.wrongScorePenalty));
+      state.game.missionStreak = 0;
+      state.game.missionWrong += 1;
+      reinsertTarget(round.target);
+      if (timeout) {
+        state.game.missionTimedOut += 1;
+        state.game.missionFeedback = "Time expired. The prompt was recycled for another try.";
+      } else {
+        state.game.missionFeedback = "Incorrect. The prompt was recycled for another try.";
+      }
+    }
+
+    state.game.currentTarget = null;
+    state.game.missionRound = null;
+    state.game.missionSelectedIndex = -1;
+    state.game.missionAwaitingConfirm = false;
+    state.game.nextRoundAt = performance.now() + (els.reduceMotion.checked ? 80 : 320);
+    updateHud();
+    renderMissionAccessibleArena();
+    checkForMissionAccessibleCompletion();
+  }
+
+  function handleMissionAccessibleTimeout() {
+    if (!isMissionAccessibleMode() || !state.game.missionRound || state.game.missionRound.resolved) {
+      return;
+    }
+    resolveMissionAccessibleRound(false, true);
+  }
+
+  function checkForMissionAccessibleCompletion() {
+    if (!isMissionAccessibleMode() || state.game.gameOver) {
+      return;
+    }
+    if (state.game.remainingTargets.length === 0 && !state.game.missionRound) {
+      finishMission(true);
     }
   }
 
-  function handleNewPromptAnnouncement() {
-    if (!state.game.currentTarget) {
+  function skipMissionAccessiblePrompt() {
+    const round = state.game.missionRound;
+    if (!round || round.resolved) {
       return;
     }
-    if (state.game.mode === "classic") {
-      const labels = state.game.activeTerms
-        .filter((term) => term.state === "active")
-        .sort((a, b) => a.lane - b.lane)
-        .map((term) => `Lane ${term.lane + 1} ${term.term}`);
-      announcePromptForAssistiveTech(labels);
-      return;
-    }
-    const leadSet = getLeadBannerSet();
-    if (!leadSet) {
-      return;
-    }
-    const labels = leadSet.banners
-      .slice()
-      .sort((a, b) => a.left - b.left)
-      .map((banner) => `Lane ${banner.lane + 1} ${banner.term}`);
-    announcePromptForAssistiveTech(labels);
+    state.game.score = Math.max(0, state.game.score - getPenaltyAmount(ROUND_CONFIG.skipScorePenalty));
+    reinsertTarget(round.target);
+    state.game.currentTarget = null;
+    state.game.missionRound = null;
+    state.game.missionSelectedIndex = -1;
+    state.game.missionAwaitingConfirm = false;
+    state.game.missionFeedback = "Prompt skipped and recycled.";
+    state.game.nextRoundAt = performance.now() + 120;
+    updateHud();
+    renderMissionAccessibleArena();
   }
 
-  function chooseBannerFromAccessibleLayer(set, bannerIndex) {
-    if (!state.game.running || state.game.gameOver || state.game.mode !== "banner_drive") {
+  function startNextMissionAccessiblePrompt() {
+    if (!isMissionAccessibleMode() || !state.game.running || state.game.gameOver || state.game.paused) {
       return;
     }
-    if (state.game.paused && !allowInteractionWhileQuestionPaused()) {
+    if (state.game.missionRound) {
       return;
     }
-    if (!set || set.evaluated || !Number.isInteger(bannerIndex) || bannerIndex < 0 || bannerIndex >= set.banners.length) {
+    if (!state.game.remainingTargets.length) {
+      finishMission(true);
       return;
     }
-    const chosen = set.banners[bannerIndex];
-    if (state.game.car && chosen) {
-      state.game.car.x = (chosen.left + chosen.right) / 2;
-      state.game.car.vx = 0;
-    }
-    evaluateBannerSet(set, bannerIndex);
+    const target = state.game.remainingTargets.pop();
+    const distractors = buildDistractors(target, 2);
+    const options = shuffle([target, ...distractors]).slice(0, 3);
+
+    state.game.missionRound = {
+      id: cryptoRandomId(),
+      target,
+      options,
+      timeLeftMs: isMissionTimed() ? getMissionTimeLimitMs() : Number.POSITIVE_INFINITY,
+      resolved: false
+    };
+    state.game.currentTarget = target;
+    state.game.missionSelectedIndex = -1;
+    state.game.missionAwaitingConfirm = false;
+    state.game.missionFeedback = "";
+    setDefinitionText(target.definition);
+    updateHud();
+    renderMissionAccessibleArena();
+    announce(`Mission Accessible prompt loaded. ${target.definition}`);
   }
 
-  function renderAccessibleChoices() {
-    if (!els.accessibleControls || !els.accessibleStatus || !els.accessibleChoiceList) {
+  function renderMissionAccessibleArena() {
+    if (!els.missionArena || !els.missionStatus || !els.missionChoiceList) {
       return;
     }
-    const profile = getAccessibilityProfile();
-    els.accessibleControls.classList.toggle("hidden", !profile.domInteractionEnabled);
-    if (!profile.domInteractionEnabled) {
+    const isMission = isMissionAccessibleMode();
+    els.missionArena.classList.toggle("hidden", !isMission);
+    if (!isMission) {
       return;
     }
 
-    updateScanToggleButton();
-    clearAccessibleChoices();
-    clearPendingAccessibleChoice();
-
-    if (state.game.gameOver) {
-      setAccessibleStatus("Mission ended. Press Start Mission to play again.");
-      return;
-    }
+    els.missionChoiceList.innerHTML = "";
     if (!state.game.running) {
-      setAccessibleStatus("Start a mission to load answer choices.");
+      els.missionStatus.textContent = "Start Mission to begin the fully accessible mode.";
+      els.missionRoundText.textContent = "-";
+      els.missionStreakText.textContent = "0";
+      els.missionTimerText.textContent = "Untimed";
+      els.missionFeedback.textContent = "";
+      return;
+    }
+    if (state.game.gameOver) {
+      els.missionStatus.textContent = "Mission ended. Press Start Mission to play again.";
+      els.missionRoundText.textContent = `${Math.min(state.game.missionAnswered, state.game.allPairs.length)} of ${state.game.allPairs.length}`;
+      els.missionStreakText.textContent = String(state.game.missionBestStreak);
+      els.missionTimerText.textContent = "Done";
+      els.missionFeedback.textContent = state.game.missionFeedback;
       return;
     }
     if (state.game.modeChangeRestartRequired) {
-      setAccessibleStatus("Mode changed. Start Mission to switch modes, or switch back to the original mode to unlock Resume.");
-      return;
-    }
-    if (state.game.paused && !allowInteractionWhileQuestionPaused()) {
-      setAccessibleStatus("Game is paused. Press Resume to continue interactive choices.");
+      els.missionStatus.textContent = "Mode changed. Press Start Mission to switch modes, or switch back to continue.";
       return;
     }
 
-    if (state.game.mode === "classic") {
-      const activeTerms = state.game.activeTerms
-        .filter((term) => term.state === "active")
-        .sort((a, b) => a.lane - b.lane);
-      if (!activeTerms.length) {
-        setAccessibleStatus("Waiting for next wave...");
-        return;
-      }
-      setAccessibleStatus(`${buildPromptProgressText()}. Term Invaders: choose a lane option.`);
-      activeTerms.forEach((term) => {
-        const actionKey = `classic-${term.id}`;
-        const label = `Lane ${term.lane + 1}: ${term.term}`;
-        addAccessibleChoiceButton(label, actionKey, () => {
-          if (!state.game.running || state.game.gameOver || state.game.mode !== "classic") {
-            return;
-          }
-          if (state.game.paused && !allowInteractionWhileQuestionPaused()) {
-            return;
-          }
-          if (state.game.paused && allowInteractionWhileQuestionPaused()) {
-            state.game.paused = false;
-            state.game.lastNow = performance.now();
-          }
-          selectLane(term.lane);
-          fireAtSelectedLane();
-        });
+    const round = state.game.missionRound;
+    const current = Math.min(state.game.missionAnswered + (round ? 1 : 0), Math.max(1, state.game.allPairs.length));
+    els.missionRoundText.textContent = `${current} of ${state.game.allPairs.length}`;
+    els.missionStreakText.textContent = String(state.game.missionStreak);
+    els.missionTimerText.textContent = isMissionTimed() && round && Number.isFinite(round.timeLeftMs)
+      ? formatMissionTime(round.timeLeftMs)
+      : "Untimed";
+
+    if (state.game.paused) {
+      els.missionStatus.textContent = "Game is paused. Press Resume to continue.";
+    } else if (!round) {
+      els.missionStatus.textContent = "Loading next Mission Accessible prompt...";
+    } else {
+      const confirmText = isMissionConfirmEnabled() ? " Select then submit." : " Selection submits immediately.";
+      els.missionStatus.textContent = `Choose the matching term.${confirmText}`;
+      round.options.forEach((pair, index) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "mission-choice-btn";
+        if (index === state.game.missionSelectedIndex) {
+          button.classList.add("is-selected");
+        }
+        button.textContent = `${index + 1}. ${pair.term}`;
+        button.addEventListener("click", () => chooseMissionAccessibleOption(index));
+        els.missionChoiceList.appendChild(button);
       });
-      return;
     }
 
-    const leadSet = getLeadBannerSet();
-    if (!leadSet) {
-      setAccessibleStatus(state.game.remainingTargets.length ? "Waiting for next banner set..." : "No remaining definitions.");
-      return;
-    }
-    setAccessibleStatus(`${buildPromptProgressText()}. Banner Drive: choose the matching banner.`);
-    leadSet.banners
-      .map((banner, index) => ({ banner, index }))
-      .sort((a, b) => a.banner.left - b.banner.left)
-      .forEach(({ banner, index }) => {
-        const actionKey = `banner-${leadSet.id}-${index}`;
-        const label = `Lane ${banner.lane + 1}: ${banner.term}`;
-        addAccessibleChoiceButton(label, actionKey, () => chooseBannerFromAccessibleLayer(leadSet, index));
-      });
+    els.missionFeedback.textContent = state.game.missionFeedback;
+    els.missionHintBtn.disabled = state.game.paused || state.game.gameOver || !state.game.missionRound;
+    els.missionSubmitBtn.disabled = state.game.paused || state.game.gameOver || !state.game.missionRound;
   }
 
   function updateHud() {
-    const unresolvedActive = state.game.activeTerms.filter((term) => term.state !== "correct_flash").length;
-    let targetsLeft = state.game.remainingTargets.length + unresolvedActive;
+    let targetsLeft = getRemainingPromptCount();
     if (state.game.mode === "banner_drive") {
       const unresolvedSets = state.game.activeBannerSets.filter((set) => !set.evaluated).length;
       targetsLeft = state.game.remainingTargets.length + unresolvedSets;
@@ -1666,7 +1658,7 @@
     els.cityText.textContent = `${Math.round(state.game.cityIntegrity)}%`;
     els.cityText.style.color = getCityIntegrityColor(state.game.cityIntegrity);
     els.remainingText.textContent = String(targetsLeft);
-    renderAccessibleChoices();
+    renderMissionAccessibleArena();
   }
 
   function getCityIntegrityColor(integrity) {
@@ -1686,11 +1678,11 @@
   function toggleGameButtons(isRunning) {
     els.pauseBtn.disabled = !isRunning;
     els.skipBtn.disabled = !isRunning;
-    els.leftBtn.disabled = !isRunning;
-    els.rightBtn.disabled = !isRunning;
+    els.leftBtn.disabled = !isRunning || isMissionAccessibleMode();
+    els.rightBtn.disabled = !isRunning || isMissionAccessibleMode();
     els.fireBtn.disabled = !isRunning || state.game.mode !== "classic";
     els.pauseBtn.textContent = "Pause";
-    renderAccessibleChoices();
+    renderMissionAccessibleArena();
   }
 
   function announce(message, assertive) {
@@ -1714,12 +1706,17 @@
     if (state.game.running && !state.game.paused && !state.game.gameOver) {
       updateGame(now, deltaMs);
     }
-    updateAccessibleScan(now);
-    drawGame(now);
+    if (!isMissionAccessibleMode()) {
+      drawGame(now);
+    }
     requestAnimationFrame(loop);
   }
 
   function updateGame(now, deltaMs) {
+    if (isMissionAccessibleMode()) {
+      updateMissionAccessibleGame(now, deltaMs);
+      return;
+    }
     if (state.game.mode === "banner_drive") {
       updateBannerDriveGame(now, deltaMs);
       return;
@@ -1764,6 +1761,24 @@
 
     if (!state.game.activeTerms.length) {
       startNextRound(now);
+    }
+  }
+
+  function updateMissionAccessibleGame(now, deltaMs) {
+    const round = state.game.missionRound;
+    if (!round) {
+      if (now >= state.game.nextRoundAt) {
+        startNextMissionAccessiblePrompt();
+      }
+      return;
+    }
+    if (!isMissionTimed() || !Number.isFinite(round.timeLeftMs)) {
+      return;
+    }
+    round.timeLeftMs = Math.max(0, round.timeLeftMs - deltaMs);
+    renderMissionAccessibleArena();
+    if (round.timeLeftMs <= 0) {
+      handleMissionAccessibleTimeout();
     }
   }
 
@@ -1840,12 +1855,6 @@
   }
 
   function drawArenaBackground() {
-    const profile = getAccessibilityProfile();
-    if (profile.simplifiedVisuals) {
-      ctx.fillStyle = "#07131f";
-      ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-      return;
-    }
     const gradient = ctx.createLinearGradient(0, 0, 0, CANVAS_HEIGHT);
     gradient.addColorStop(0, "#050d18");
     gradient.addColorStop(0.5, "#0d1f33");
@@ -1862,15 +1871,14 @@
   }
 
   function drawBannerRoadMarks() {
-    const profile = getAccessibilityProfile();
     ctx.save();
-    ctx.fillStyle = profile.simplifiedVisuals ? "rgba(9, 20, 36, 0.88)" : "rgba(7, 16, 30, 0.55)";
+    ctx.fillStyle = "rgba(7, 16, 30, 0.55)";
     ctx.fillRect(0, 45, CANVAS_WIDTH, CANVAS_HEIGHT - 90);
-    ctx.strokeStyle = profile.strongGuides ? "rgba(170,224,255,0.8)" : "rgba(90,153,210,0.35)";
-    ctx.lineWidth = profile.strongGuides ? 3 : 1.5;
+    ctx.strokeStyle = "rgba(90,153,210,0.35)";
+    ctx.lineWidth = 1.5;
     laneCenters.forEach((center, index) => {
       if (index > 0) {
-        ctx.setLineDash(profile.strongGuides ? [14, 10] : [10, 10]);
+        ctx.setLineDash([10, 10]);
         ctx.beginPath();
         ctx.moveTo((laneCenters[index - 1] + center) / 2, 45);
         ctx.lineTo((laneCenters[index - 1] + center) / 2, CANVAS_HEIGHT - 20);
@@ -1889,22 +1897,20 @@
   }
 
   function drawLaneHighlights() {
-    const profile = getAccessibilityProfile();
     const center = laneCenters[state.game.selectedLane];
-    ctx.fillStyle = profile.strongGuides ? "rgba(245, 255, 141, 0.2)" : "rgba(0, 225, 143, 0.11)";
+    ctx.fillStyle = "rgba(0, 225, 143, 0.11)";
     ctx.fillRect(center - 130, 40, 260, CITY_LINE_Y - 25);
   }
 
   function drawLaneGuides() {
-    const profile = getAccessibilityProfile();
     ctx.save();
     laneCenters.forEach((center, lane) => {
       ctx.strokeStyle = lane === state.game.selectedLane
-        ? (profile.strongGuides ? "rgba(255,255,156,0.98)" : "rgba(136,255,225,0.8)")
-        : (profile.strongGuides ? "rgba(170,224,255,0.78)" : "rgba(90,153,210,0.35)");
+        ? "rgba(136,255,225,0.8)"
+        : "rgba(90,153,210,0.35)";
       ctx.lineWidth = lane === state.game.selectedLane
-        ? (profile.strongGuides ? 5 : 3)
-        : (profile.strongGuides ? 2.6 : 1.5);
+        ? 3
+        : 1.5;
       ctx.beginPath();
       ctx.moveTo(center, 45);
       ctx.lineTo(center, CITY_LINE_Y - 8);
@@ -2158,9 +2164,6 @@
     if (state.game.modeChangeRestartRequired) {
       ctx.fillText("Mode changed. Press Start Mission to switch modes.", CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 18);
       ctx.fillText("Or switch back to current mode to unlock Resume.", CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 48);
-    } else if (state.game.accessibilityQuestionPause) {
-      ctx.fillText("Accessibility pause: choose an answer in Accessible Interaction.", CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 18);
-      ctx.fillText("Or press P/Resume to continue motion without answering.", CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 48);
     } else {
       ctx.fillText("Press P or Resume to continue", CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 28);
     }
@@ -2286,9 +2289,11 @@
   function persistSettings() {
     const settings = {
       gameMode: els.gameMode.value || DEFAULT_GAME_MODE,
-      choicesPerRound: Number(els.choicesPerRound.value) || DEFAULT_CHOICES_PER_ROUND,
       fallSpeed: els.fallSpeed.value || DEFAULT_FALL_SPEED,
-      accessibilityMode: getAccessibilityMode(),
+      missionPace: els.missionPace ? els.missionPace.value : DEFAULT_MISSION_PACE,
+      missionTimeLimitSeconds: Number(els.missionTimeLimit && els.missionTimeLimit.value) || DEFAULT_MISSION_TIME_LIMIT_SECONDS,
+      missionConfirm: !!(els.missionConfirm && els.missionConfirm.checked),
+      missionHints: !!(els.missionHints && els.missionHints.checked),
       reduceMotion: !!els.reduceMotion.checked,
       highContrast: !!els.highContrast.checked,
       initials: sanitizeInitials(els.initials.value)
