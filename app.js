@@ -16,7 +16,15 @@
   const DEFAULT_MISSION_PACE = "untimed";
   const DEFAULT_MISSION_TIME_LIMIT_SECONDS = 30;
   const DEFAULT_CLASSIC_START_LANE = Math.floor(LANE_COUNT / 2);
+  const DEFAULT_SOUND_LEVEL = "medium";
+  const DEFAULT_WRONG_ANSWER_LIMIT = "off";
   const REQUIRED_COPYRIGHT_NOTICE = "Study Arcade, copyright Dr. Grant Benham";
+  const SOUND_LEVEL_GAIN = {
+    off: 0.0,
+    low: 0.22,
+    medium: 0.38,
+    high: 0.55
+  };
 
   const FALL_SPEED_MULTIPLIER = {
     slow: 0.7,
@@ -46,13 +54,16 @@
     gameMode: document.getElementById("game-mode"),
     fallSpeed: document.getElementById("fall-speed"),
     speedField: document.getElementById("speed-field"),
+    mistakeLimitField: document.getElementById("mistake-limit-field"),
+    wrongAnswerLimit: document.getElementById("wrong-answer-limit"),
+    soundLevelField: document.getElementById("sound-level-field"),
     missionSettings: document.getElementById("mission-settings"),
     missionPace: document.getElementById("mission-pace"),
     missionTimeLimit: document.getElementById("mission-time-limit"),
     missionConfirm: document.getElementById("mission-confirm"),
     missionHints: document.getElementById("mission-hints"),
     reduceMotion: document.getElementById("reduce-motion"),
-    soundEffects: document.getElementById("sound-effects"),
+    soundLevel: document.getElementById("sound-level"),
     startBtn: document.getElementById("start-btn"),
     pauseBtn: document.getElementById("pause-btn"),
     skipBtn: document.getElementById("skip-btn"),
@@ -64,6 +75,8 @@
     scoreText: document.getElementById("score-text"),
     cityHudItem: document.getElementById("city-hud-item"),
     cityText: document.getElementById("city-text"),
+    mistakesHudItem: document.getElementById("mistakes-hud-item"),
+    mistakesText: document.getElementById("mistakes-text"),
     remainingText: document.getElementById("remaining-text"),
     definitionBox: document.getElementById("definition-box"),
     definitionText: document.getElementById("definition-text"),
@@ -138,6 +151,7 @@
       selectedLane: DEFAULT_CLASSIC_START_LANE,
       score: 0,
       cityIntegrity: 100,
+      mistakes: 0,
       roundsCompleted: 0,
       activeTerms: [],
       currentTarget: null,
@@ -178,6 +192,60 @@
 
   function getPenaltyAmount(baseAmount) {
     return Math.max(1, Math.round(baseAmount));
+  }
+
+  function getPersistedSoundLevel(settings) {
+    const persisted = String(settings && settings.soundLevel ? settings.soundLevel : "").toLowerCase();
+    if (persisted in SOUND_LEVEL_GAIN) {
+      return persisted;
+    }
+    // Backward compatibility: migrate old boolean soundEffects flag.
+    if (settings && typeof settings.soundEffects === "boolean") {
+      return settings.soundEffects ? DEFAULT_SOUND_LEVEL : "off";
+    }
+    return DEFAULT_SOUND_LEVEL;
+  }
+
+  function getSelectedSoundLevel() {
+    const level = String(els.soundLevel && els.soundLevel.value ? els.soundLevel.value : DEFAULT_SOUND_LEVEL).toLowerCase();
+    return level in SOUND_LEVEL_GAIN ? level : DEFAULT_SOUND_LEVEL;
+  }
+
+  function getMistakeLimit() {
+    if (isMissionAccessibleMode()) {
+      return Number.POSITIVE_INFINITY;
+    }
+    const selected = String(els.wrongAnswerLimit && els.wrongAnswerLimit.value ? els.wrongAnswerLimit.value : DEFAULT_WRONG_ANSWER_LIMIT).toLowerCase();
+    if (selected === "off") {
+      return Number.POSITIVE_INFINITY;
+    }
+    const parsed = Number(selected);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : Number.POSITIVE_INFINITY;
+  }
+
+  function getMistakeLimitLabel() {
+    const limit = getMistakeLimit();
+    return Number.isFinite(limit) ? String(limit) : "Off";
+  }
+
+  function registerMistake(reason, amount) {
+    if (!state.game.running || state.game.gameOver || isMissionAccessibleMode()) {
+      return false;
+    }
+    const increment = Math.max(1, Number.isFinite(amount) ? Math.floor(amount) : 1);
+    state.game.mistakes += increment;
+    updateHud();
+    const limit = getMistakeLimit();
+    if (!Number.isFinite(limit)) {
+      return false;
+    }
+    if (state.game.mistakes < limit) {
+      return false;
+    }
+    setDefinitionText(`Mission failed: Wrong Answer Limit reached (${state.game.mistakes}/${limit}).`);
+    announce(`Wrong Answer Limit reached (${state.game.mistakes}/${limit}) after ${reason || "mistakes"}. Mission failed.`, true);
+    finishMission(false);
+    return true;
   }
 
   function isMissionAccessibleMode(mode) {
@@ -229,7 +297,7 @@
       event.target.value = "";
     });
 
-    [els.gameMode, els.fallSpeed, els.missionPace, els.missionTimeLimit, els.missionConfirm, els.missionHints, els.reduceMotion, els.soundEffects].forEach((control) => {
+    [els.gameMode, els.fallSpeed, els.wrongAnswerLimit, els.soundLevel, els.missionPace, els.missionTimeLimit, els.missionConfirm, els.missionHints, els.reduceMotion].forEach((control) => {
       if (!control) {
         return;
       }
@@ -279,6 +347,18 @@
       persistSettings();
     });
 
+    if (els.wrongAnswerLimit) {
+      els.wrongAnswerLimit.addEventListener("change", () => {
+        const activeMission = state.game.running && !state.game.gameOver;
+        if (activeMission && !isMissionAccessibleMode()) {
+          pauseForSettingsEdit();
+          announce("Game paused. Wrong Answer Limit updated.");
+        }
+        updateHud();
+        persistSettings();
+      });
+    }
+
     [els.missionPace, els.missionTimeLimit, els.missionConfirm, els.missionHints].forEach((control) => {
       if (!control) {
         return;
@@ -314,19 +394,18 @@
       persistSettings();
     });
 
-    els.soundEffects.addEventListener("change", () => {
-      const activeMission = state.game.running && !state.game.gameOver;
-      if (activeMission) {
-        pauseForSettingsEdit();
-        announce("Game paused. Sound Effects setting updated.");
-      }
-      if (!isSoundEnabled()) {
-        stopEngineLoop();
-      } else {
+    if (els.soundLevel) {
+      els.soundLevel.addEventListener("change", () => {
+        const activeMission = state.game.running && !state.game.gameOver;
+        if (activeMission) {
+          pauseForSettingsEdit();
+          announce("Game paused. Sound level updated.");
+        }
+        applySoundLevelFromSettings();
         syncEngineSound();
-      }
-      persistSettings();
-    });
+        persistSettings();
+      });
+    }
 
     els.startBtn.addEventListener("click", startMission);
     els.pauseBtn.addEventListener("click", togglePause);
@@ -589,8 +668,14 @@
   function initializeSettingsUI() {
     const reduceBySystem = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     els.reduceMotion.checked = state.settings.reduceMotion ?? reduceBySystem;
-    if (els.soundEffects) {
-      els.soundEffects.checked = state.settings.soundEffects ?? true;
+    if (els.wrongAnswerLimit) {
+      const persistedLimit = String(state.settings.wrongAnswerLimit || DEFAULT_WRONG_ANSWER_LIMIT);
+      const validLimits = new Set(["off", "5", "10", "20"]);
+      els.wrongAnswerLimit.value = validLimits.has(persistedLimit) ? persistedLimit : DEFAULT_WRONG_ANSWER_LIMIT;
+    }
+    if (els.soundLevel) {
+      const soundLevel = getPersistedSoundLevel(state.settings);
+      els.soundLevel.value = soundLevel;
     }
     els.gameMode.value = state.settings.gameMode || DEFAULT_GAME_MODE;
     els.fallSpeed.value = state.settings.fallSpeed || DEFAULT_FALL_SPEED;
@@ -611,6 +696,7 @@
     if (state.settings.initials) {
       els.initials.value = state.settings.initials;
     }
+    applySoundLevelFromSettings();
     updateModeUI(els.gameMode.value);
   }
 
@@ -634,6 +720,9 @@
     if (els.speedField) {
       els.speedField.classList.toggle("hidden", isMission);
     }
+    if (els.mistakeLimitField) {
+      els.mistakeLimitField.classList.toggle("hidden", isMission);
+    }
     if (els.missionSettings) {
       els.missionSettings.classList.toggle("hidden", !isMission);
     }
@@ -651,6 +740,9 @@
       els.pauseBtn.classList.toggle("hidden", isMission);
     }
     els.cityHudItem.classList.toggle("hidden", !isClassic);
+    if (els.mistakesHudItem) {
+      els.mistakesHudItem.classList.toggle("hidden", isMission);
+    }
     els.fireBtn.disabled = !state.game.running || !isClassic;
     if (isClassic) {
       els.helpText.innerHTML = "Use Left/Right controls, <kbd>1</kbd> to <kbd>3</kbd>, or arrow keys to select a lane. Press Fire, <kbd>Enter</kbd>, or <kbd>Space</kbd> to shoot. Use <kbd>P</kbd> to pause and <kbd>K</kbd> to skip definition.";
@@ -1212,6 +1304,9 @@
       createBeam(lane, false);
       state.game.score = Math.max(0, state.game.score - getPenaltyAmount(ROUND_CONFIG.missScorePenalty));
       playClassicWrongTone();
+      if (registerMistake("missed shot")) {
+        return;
+      }
       updateHud();
       announce(`No term in lane ${lane + 1}.`);
       return;
@@ -1240,6 +1335,9 @@
 
     state.game.score = Math.max(0, state.game.score - getPenaltyAmount(ROUND_CONFIG.wrongScorePenalty));
     playClassicWrongTone();
+    if (registerMistake("wrong answer")) {
+      return;
+    }
     term.state = "wrong_flash";
     term.stateUntil = now + 500;
     updateHud();
@@ -1259,6 +1357,12 @@
     if (reason === "breach") {
       const breaches = Math.max(1, Number(options && options.breachCount) || 1);
       state.game.cityIntegrity = Math.max(0, state.game.cityIntegrity - getPenaltyAmount(ROUND_CONFIG.breachIntegrityPenalty) * breaches);
+      if (registerMistake("breached terms", breaches)) {
+        return;
+      }
+    }
+    if (state.game.gameOver) {
+      return;
     }
     setDefinitionText(reason === "breach" ? "Wave missed. New set incoming..." : "Loading next wave...");
     checkForGameEnd();
@@ -1451,6 +1555,9 @@
       const penalty = bannerUnderCar ? getPenaltyAmount(ROUND_CONFIG.wrongScorePenalty) : getPenaltyAmount(ROUND_CONFIG.missScorePenalty);
       state.game.score = Math.max(0, state.game.score - penalty);
       playClassicWrongTone();
+      if (registerMistake(bannerUnderCar ? "wrong gate" : "missed gate")) {
+        return;
+      }
       reinsertTarget(set.target);
       if (bannerUnderCar) {
         announce("Wrong banner gate.");
@@ -1876,6 +1983,9 @@
     els.scoreText.textContent = String(state.game.score);
     els.cityText.textContent = `${Math.round(state.game.cityIntegrity)}%`;
     els.cityText.style.color = getCityIntegrityColor(state.game.cityIntegrity);
+    if (els.mistakesText) {
+      els.mistakesText.textContent = `${state.game.mistakes} / ${getMistakeLimitLabel()}`;
+    }
     els.remainingText.textContent = String(targetsLeft);
     renderMissionAccessibleArena();
   }
@@ -1929,7 +2039,17 @@
   }
 
   function isSoundEnabled() {
-    return !!(els.soundEffects && els.soundEffects.checked);
+    return getSelectedSoundLevel() !== "off";
+  }
+
+  function applySoundLevelFromSettings(forceCreate) {
+    const level = getSelectedSoundLevel();
+    const audioCtx = forceCreate ? getAudioContext() : audioState.ctx;
+    if (!audioCtx || !audioState.masterGain) {
+      return;
+    }
+    const targetGain = SOUND_LEVEL_GAIN[level] ?? SOUND_LEVEL_GAIN[DEFAULT_SOUND_LEVEL];
+    audioState.masterGain.gain.setTargetAtTime(targetGain, audioCtx.currentTime, 0.02);
   }
 
   function getAudioContext() {
@@ -1944,7 +2064,7 @@
       }
       audioState.ctx = new AudioCtor();
       audioState.masterGain = audioState.ctx.createGain();
-      audioState.masterGain.gain.value = 0.44;
+      audioState.masterGain.gain.value = SOUND_LEVEL_GAIN[getSelectedSoundLevel()] ?? SOUND_LEVEL_GAIN[DEFAULT_SOUND_LEVEL];
       audioState.masterGain.connect(audioState.ctx.destination);
     }
     return audioState.ctx;
@@ -2705,8 +2825,9 @@
       missionTimeLimitSeconds: Number(els.missionTimeLimit && els.missionTimeLimit.value) || DEFAULT_MISSION_TIME_LIMIT_SECONDS,
       missionConfirm: !!(els.missionConfirm && els.missionConfirm.checked),
       missionHints: !!(els.missionHints && els.missionHints.checked),
+      wrongAnswerLimit: String(els.wrongAnswerLimit && els.wrongAnswerLimit.value ? els.wrongAnswerLimit.value : DEFAULT_WRONG_ANSWER_LIMIT),
+      soundLevel: getSelectedSoundLevel(),
       reduceMotion: !!els.reduceMotion.checked,
-      soundEffects: !!(els.soundEffects && els.soundEffects.checked),
       initials: sanitizeInitials(els.initials.value)
     };
     state.settings = settings;

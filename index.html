@@ -63,14 +63,28 @@
               <option value="super_fast">Super-Fast</option>
             </select>
           </div>
+          <div id="mistake-limit-field" class="field-row">
+            <label for="wrong-answer-limit">Wrong Answer Limit</label>
+            <select id="wrong-answer-limit">
+              <option value="off" selected>Off</option>
+              <option value="5">5</option>
+              <option value="10">10</option>
+              <option value="20">20</option>
+            </select>
+          </div>
+          <div id="sound-level-field" class="field-row">
+            <label for="sound-level">Sound Level</label>
+            <select id="sound-level">
+              <option value="off">Off</option>
+              <option value="low">Low</option>
+              <option value="medium" selected>Medium</option>
+              <option value="high">High</option>
+            </select>
+          </div>
           <div id="visual-access-row" class="field-row">
             <label class="inline-checkbox" for="reduce-motion">
               <input id="reduce-motion" type="checkbox">
               Reduced Motion
-            </label>
-            <label class="inline-checkbox" for="sound-effects">
-              <input id="sound-effects" type="checkbox" checked>
-              Sound Effects
             </label>
           </div>
           <div id="mission-settings" class="mission-settings hidden" aria-labelledby="mission-settings-heading">
@@ -124,6 +138,7 @@
       <div class="hud" role="status" aria-live="polite">
         <p><strong>Score:</strong> <span id="score-text">0</span></p>
         <p id="city-hud-item"><strong>City Integrity:</strong> <span id="city-text">100%</span></p>
+        <p id="mistakes-hud-item"><strong>Mistakes:</strong> <span id="mistakes-text">0 / Off</span></p>
         <p><strong>Remaining Terms:</strong> <span id="remaining-text">0</span></p>
       </div>
 
@@ -213,9 +228,9 @@
         <p>Mission Accessible: use <kbd>1</kbd>, <kbd>2</kbd>, <kbd>3</kbd> to select choices, <kbd>Enter</kbd> or <kbd>Space</kbd> to submit when confirm mode is enabled, <kbd>H</kbd> for hint, <kbd>R</kbd> to repeat the definition, plus <kbd>P</kbd> and <kbd>K</kbd>. Mission pause/skip buttons are also in the Game Arena for easier access while focus is locked.</p>
         <p>Mission Accessible keeps keyboard focus cycling inside the mission arena while active. Use <strong>Adjust Settings</strong> to temporarily unlock focus and jump to Setup controls, then use <strong>Return to Mission Focus</strong> to lock focus back to gameplay.</p>
         <p>If you change settings during a mission, the game auto-pauses. Changing speed resets the current wave/set in Term Invaders and Banner Drive, while Mission Accessible applies updated options to the next prompt.</p>
-        <p>Sound effects are enabled by default. Use the <strong>Sound Effects</strong> checkbox in Game Settings to toggle audio on or off for all modes.</p>
+        <p>Use <strong>Sound Level</strong> to set audio to Off, Low, Medium, or High (default Medium).</p>
         <p><strong>Scoring</strong></p>
-        <p>All game types use three choices per prompt. Correct answers add points and wrong answers reduce points. In Term Invaders, city integrity drops when terms reach the city.</p>
+        <p>All game types use three choices per prompt. Correct answers add points and wrong answers reduce points. In Term Invaders, city integrity drops when terms reach the city. Wrong Answer Limit (Off/5/10/20) applies to Term Invaders and Banner Drive.</p>
       </div>
     </div>
   </div>
