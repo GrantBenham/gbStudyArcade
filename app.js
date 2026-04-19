@@ -17,7 +17,7 @@
   const DEFAULT_MISSION_TIME_LIMIT_SECONDS = 30;
   const DEFAULT_CLASSIC_START_LANE = Math.floor(LANE_COUNT / 2);
   const DEFAULT_SOUND_LEVEL = "medium";
-  const DEFAULT_WRONG_ANSWER_LIMIT = "off";
+  const DEFAULT_WRONG_ANSWER_LIMIT = "10";
   const REQUIRED_COPYRIGHT_NOTICE = "Study Arcade, copyright Dr. Grant Benham";
   const SOUND_LEVEL_GAIN = {
     off: 0.0,
