@@ -75,29 +75,35 @@
           </div>
           <div id="mission-settings" class="mission-settings hidden" aria-labelledby="mission-settings-heading">
             <p id="mission-settings-heading" class="mission-settings-title">Mission Accessible Options</p>
-            <div class="field-row">
-              <label for="mission-pace">Pace</label>
-              <select id="mission-pace">
-                <option value="untimed" selected>Untimed</option>
-                <option value="timed">Timed</option>
-              </select>
+            <div class="mission-settings-grid">
+              <div class="mission-settings-left">
+                <div class="field-row">
+                  <label for="mission-pace">Pace</label>
+                  <select id="mission-pace">
+                    <option value="untimed" selected>Untimed</option>
+                    <option value="timed">Timed</option>
+                  </select>
+                </div>
+                <div class="field-row">
+                  <label for="mission-time-limit">Time Per Prompt</label>
+                  <select id="mission-time-limit">
+                    <option value="15">15 seconds</option>
+                    <option value="30" selected>30 seconds</option>
+                    <option value="60">60 seconds</option>
+                  </select>
+                </div>
+              </div>
+              <div class="mission-settings-right">
+                <label class="inline-checkbox" for="mission-confirm">
+                  <input id="mission-confirm" type="checkbox">
+                  Confirm before submit
+                </label>
+                <label class="inline-checkbox" for="mission-hints">
+                  <input id="mission-hints" type="checkbox" checked>
+                  Hints enabled
+                </label>
+              </div>
             </div>
-            <div class="field-row">
-              <label for="mission-time-limit">Time Per Prompt</label>
-              <select id="mission-time-limit">
-                <option value="15">15 seconds</option>
-                <option value="30" selected>30 seconds</option>
-                <option value="60">60 seconds</option>
-              </select>
-            </div>
-            <label class="inline-checkbox" for="mission-confirm">
-              <input id="mission-confirm" type="checkbox">
-              Confirm before submit
-            </label>
-            <label class="inline-checkbox" for="mission-hints">
-              <input id="mission-hints" type="checkbox" checked>
-              Hints enabled
-            </label>
           </div>
         </div>
       </fieldset>
