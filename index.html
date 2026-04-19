@@ -68,9 +68,9 @@
               <input id="reduce-motion" type="checkbox">
               Reduced Motion
             </label>
-            <label class="inline-checkbox" for="high-contrast">
-              <input id="high-contrast" type="checkbox">
-              High Contrast
+            <label class="inline-checkbox" for="sound-effects">
+              <input id="sound-effects" type="checkbox" checked>
+              Sound Effects
             </label>
           </div>
           <div id="mission-settings" class="mission-settings hidden" aria-labelledby="mission-settings-heading">
@@ -149,6 +149,8 @@
           <button id="repeat-definition-btn" type="button">Repeat Definition</button>
           <button id="mission-hint-btn" type="button">Hint</button>
           <button id="mission-submit-btn" type="button">Submit Choice</button>
+          <button id="mission-pause-btn" type="button">Pause</button>
+          <button id="mission-skip-btn" type="button">Skip Prompt</button>
           <button id="mission-settings-access-btn" type="button" aria-pressed="false">Adjust Settings</button>
         </div>
         <p id="mission-feedback" class="hint" aria-live="polite"></p>
@@ -211,9 +213,10 @@ Another term: Another definition</pre>
         <p><strong>Mission Accessible:</strong> fully DOM-based gameplay with three large answer choices per prompt, optional timing, and keyboard-first input.</p>
         <p><strong>Controls</strong></p>
         <p>Term Invaders/Banner Drive: Left/Right controls or arrow keys, <kbd>P</kbd> pause/resume, <kbd>K</kbd> skip. Fire controls apply to Term Invaders only.</p>
-        <p>Mission Accessible: use <kbd>1</kbd>, <kbd>2</kbd>, <kbd>3</kbd> to select choices, <kbd>Enter</kbd> or <kbd>Space</kbd> to submit when confirm mode is enabled, <kbd>H</kbd> for hint, <kbd>R</kbd> to repeat the definition, plus <kbd>P</kbd> and <kbd>K</kbd>.</p>
+        <p>Mission Accessible: use <kbd>1</kbd>, <kbd>2</kbd>, <kbd>3</kbd> to select choices, <kbd>Enter</kbd> or <kbd>Space</kbd> to submit when confirm mode is enabled, <kbd>H</kbd> for hint, <kbd>R</kbd> to repeat the definition, plus <kbd>P</kbd> and <kbd>K</kbd>. Mission pause/skip buttons are also in the Game Arena for easier access while focus is locked.</p>
         <p>Mission Accessible keeps keyboard focus cycling inside the mission arena while active. Use <strong>Adjust Settings</strong> to temporarily unlock focus and jump to Setup controls, then use <strong>Return to Mission Focus</strong> to lock focus back to gameplay.</p>
         <p>If you change settings during a mission, the game auto-pauses. Changing speed resets the current wave/set in Term Invaders and Banner Drive, while Mission Accessible applies updated options to the next prompt.</p>
+        <p>Sound effects are enabled by default. Use the <strong>Sound Effects</strong> checkbox in Game Settings to toggle audio on or off for all modes.</p>
         <p><strong>Scoring</strong></p>
         <p>All game types use three choices per prompt. Correct answers add points and wrong answers reduce points. In Term Invaders, city integrity drops when terms reach the city.</p>
       </div>

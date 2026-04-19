@@ -51,7 +51,7 @@
     missionConfirm: document.getElementById("mission-confirm"),
     missionHints: document.getElementById("mission-hints"),
     reduceMotion: document.getElementById("reduce-motion"),
-    highContrast: document.getElementById("high-contrast"),
+    soundEffects: document.getElementById("sound-effects"),
     startBtn: document.getElementById("start-btn"),
     pauseBtn: document.getElementById("pause-btn"),
     skipBtn: document.getElementById("skip-btn"),
@@ -78,6 +78,8 @@
     repeatDefinitionBtn: document.getElementById("repeat-definition-btn"),
     missionHintBtn: document.getElementById("mission-hint-btn"),
     missionSubmitBtn: document.getElementById("mission-submit-btn"),
+    missionPauseBtn: document.getElementById("mission-pause-btn"),
+    missionSkipBtn: document.getElementById("mission-skip-btn"),
     missionSettingsAccessBtn: document.getElementById("mission-settings-access-btn"),
     canvas: document.getElementById("game-canvas"),
     scoresList: document.getElementById("scores-list"),
@@ -101,6 +103,17 @@
     helpAutoPaused: false,
     lastFocusedElement: null,
     game: createGameState()
+  };
+
+  const audioState = {
+    ctx: null,
+    masterGain: null,
+    engineOsc: null,
+    engineLfo: null,
+    engineGain: null,
+    engineOn: false,
+    supported: typeof window !== "undefined"
+      && (typeof window.AudioContext !== "undefined" || typeof window.webkitAudioContext !== "undefined")
   };
 
   initializeSettingsUI();
@@ -215,7 +228,7 @@
       event.target.value = "";
     });
 
-    [els.gameMode, els.fallSpeed, els.missionPace, els.missionTimeLimit, els.missionConfirm, els.missionHints, els.reduceMotion, els.highContrast].forEach((control) => {
+    [els.gameMode, els.fallSpeed, els.missionPace, els.missionTimeLimit, els.missionConfirm, els.missionHints, els.reduceMotion, els.soundEffects].forEach((control) => {
       if (!control) {
         return;
       }
@@ -300,13 +313,17 @@
       persistSettings();
     });
 
-    els.highContrast.addEventListener("change", () => {
+    els.soundEffects.addEventListener("change", () => {
       const activeMission = state.game.running && !state.game.gameOver;
       if (activeMission) {
         pauseForSettingsEdit();
-        announce("Game paused. High Contrast setting updated.");
+        announce("Game paused. Sound Effects setting updated.");
       }
-      document.body.classList.toggle("high-contrast", els.highContrast.checked);
+      if (!isSoundEnabled()) {
+        stopEngineLoop();
+      } else {
+        syncEngineSound();
+      }
       persistSettings();
     });
 
@@ -330,6 +347,8 @@
     els.repeatDefinitionBtn.addEventListener("click", repeatCurrentDefinition);
     els.missionHintBtn.addEventListener("click", requestMissionHint);
     els.missionSubmitBtn.addEventListener("click", submitMissionAccessibleChoice);
+    els.missionPauseBtn.addEventListener("click", togglePause);
+    els.missionSkipBtn.addEventListener("click", skipDefinition);
     els.missionSettingsAccessBtn.addEventListener("click", toggleMissionSettingsAccess);
     els.canvas.addEventListener("click", handleCanvasClick);
 
@@ -430,6 +449,7 @@
       state.game.paused = true;
       state.helpAutoPaused = true;
       els.pauseBtn.textContent = "Resume";
+      syncEngineSound();
     }
     state.helpOpen = true;
     state.lastFocusedElement = document.activeElement;
@@ -459,6 +479,7 @@
       state.game.paused = false;
       state.game.lastNow = performance.now();
       els.pauseBtn.textContent = "Pause";
+      syncEngineSound();
     }
     state.helpAutoPaused = false;
     if (restoreFocus && state.lastFocusedElement && typeof state.lastFocusedElement.focus === "function") {
@@ -567,7 +588,9 @@
   function initializeSettingsUI() {
     const reduceBySystem = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     els.reduceMotion.checked = state.settings.reduceMotion ?? reduceBySystem;
-    els.highContrast.checked = true;
+    if (els.soundEffects) {
+      els.soundEffects.checked = state.settings.soundEffects ?? true;
+    }
     els.gameMode.value = state.settings.gameMode || DEFAULT_GAME_MODE;
     els.fallSpeed.value = state.settings.fallSpeed || DEFAULT_FALL_SPEED;
     if (els.missionPace) {
@@ -587,7 +610,6 @@
     if (state.settings.initials) {
       els.initials.value = state.settings.initials;
     }
-    document.body.classList.toggle("high-contrast", true);
     updateModeUI(els.gameMode.value);
   }
 
@@ -622,6 +644,10 @@
     }
     if (els.skipBtn) {
       els.skipBtn.textContent = isMission ? "Skip Prompt" : "Skip Definition";
+      els.skipBtn.classList.toggle("hidden", isMission);
+    }
+    if (els.pauseBtn) {
+      els.pauseBtn.classList.toggle("hidden", isMission);
     }
     els.cityHudItem.classList.toggle("hidden", !isClassic);
     els.fireBtn.disabled = !state.game.running || !isClassic;
@@ -630,8 +656,9 @@
     } else if (selectedMode === "banner_drive") {
       els.helpText.innerHTML = "Use Left/Right controls or <kbd>Left</kbd>/<kbd>Right</kbd> arrows to steer smoothly. Guide the car under the correct banner. Use <kbd>P</kbd> to pause and <kbd>K</kbd> to skip current set.";
     } else {
-      els.helpText.innerHTML = "Mission Accessible: choose with <kbd>1</kbd>, <kbd>2</kbd>, or <kbd>3</kbd>. With Confirm enabled, submit by <kbd>Enter</kbd>/<kbd>Space</kbd>; otherwise selection submits immediately. Press <kbd>H</kbd> for hint, <kbd>R</kbd> to repeat, <kbd>P</kbd> to pause, and <kbd>K</kbd> to skip.";
+      els.helpText.innerHTML = "Mission Accessible: choose with <kbd>1</kbd>, <kbd>2</kbd>, or <kbd>3</kbd>. With Confirm enabled, submit by <kbd>Enter</kbd>/<kbd>Space</kbd>; otherwise selection submits immediately. Use arena buttons (or <kbd>P</kbd>/<kbd>K</kbd>) for pause and skip.";
     }
+    syncEngineSound();
     renderMissionAccessibleArena();
   }
 
@@ -884,6 +911,7 @@
 
     els.initials.value = sanitizeInitials(els.initials.value);
     persistSettings();
+    tryResumeAudioContext();
 
     state.game = createGameState();
     state.game.running = true;
@@ -948,6 +976,7 @@
       announce("Mission started. Match the definition to the correct term.");
       els.canvas.focus();
     }
+    syncEngineSound();
   }
 
   function buildSelectedPairs() {
@@ -968,6 +997,7 @@
     state.game.leftPressed = false;
     state.game.rightPressed = false;
     els.pauseBtn.textContent = "Resume";
+    syncEngineSound();
     return true;
   }
 
@@ -981,11 +1011,13 @@
       els.pauseBtn.disabled = true;
       els.pauseBtn.textContent = "Restart Required";
       setDefinitionText("Mode change selected. Start Mission to switch modes, or switch back to continue this mission.");
+      syncEngineSound();
       renderMissionAccessibleArena();
       return;
     }
     els.pauseBtn.disabled = false;
     els.pauseBtn.textContent = state.game.paused ? "Resume" : "Pause";
+    syncEngineSound();
     renderMissionAccessibleArena();
   }
 
@@ -1084,6 +1116,7 @@
       }
     }
     els.pauseBtn.textContent = state.game.paused ? "Resume" : "Pause";
+    syncEngineSound();
     announce(state.game.paused ? "Game paused." : "Game resumed.");
     if (!state.game.paused) {
       state.game.lastNow = performance.now();
@@ -1143,6 +1176,7 @@
     if (!term) {
       createBeam(lane, false);
       state.game.score = Math.max(0, state.game.score - getPenaltyAmount(ROUND_CONFIG.missScorePenalty));
+      playClassicWrongTone();
       updateHud();
       announce(`No term in lane ${lane + 1}.`);
       return;
@@ -1160,6 +1194,7 @@
       state.game.roundsCompleted += 1;
       state.game.correctTerms.push(term.term);
       state.game.pulseAt = now;
+      playClassicHitExplosion();
       renderCorrectTerms();
       term.state = "correct_flash";
       term.stateUntil = now + 500;
@@ -1169,6 +1204,7 @@
     }
 
     state.game.score = Math.max(0, state.game.score - getPenaltyAmount(ROUND_CONFIG.wrongScorePenalty));
+    playClassicWrongTone();
     term.state = "wrong_flash";
     term.stateUntil = now + 500;
     updateHud();
@@ -1372,12 +1408,14 @@
       state.game.roundsCompleted += 1;
       state.game.correctTerms.push(set.target.term);
       state.game.pulseAt = performance.now();
+      playBannerWinBleep();
       renderCorrectTerms();
       announce("Correct banner gate.");
     } else {
       set.result = bannerUnderCar ? "wrong" : "miss";
       const penalty = bannerUnderCar ? getPenaltyAmount(ROUND_CONFIG.wrongScorePenalty) : getPenaltyAmount(ROUND_CONFIG.missScorePenalty);
       state.game.score = Math.max(0, state.game.score - penalty);
+      playClassicWrongTone();
       reinsertTarget(set.target);
       if (bannerUnderCar) {
         announce("Wrong banner gate.");
@@ -1417,6 +1455,7 @@
     state.game.missionRound = null;
     state.game.missionSelectedIndex = -1;
     toggleGameButtons(false);
+    syncEngineSound();
     saveScore();
     announce(`${won ? "Mission complete" : "City overrun"}. Final score ${state.game.score}.`, true);
   }
@@ -1607,12 +1646,14 @@
       state.game.missionStreak += 1;
       state.game.missionBestStreak = Math.max(state.game.missionBestStreak, state.game.missionStreak);
       state.game.correctTerms.push(round.target.term);
+      playMissionPositiveCue();
       renderCorrectTerms();
       state.game.missionFeedback = "Correct! +100 points.";
     } else {
       state.game.score = Math.max(0, state.game.score - getPenaltyAmount(ROUND_CONFIG.wrongScorePenalty));
       state.game.missionStreak = 0;
       state.game.missionWrong += 1;
+      playMissionNegativeCue();
       reinsertTarget(round.target);
       if (timeout) {
         state.game.missionTimedOut += 1;
@@ -1713,6 +1754,7 @@
     els.missionChoiceList.innerHTML = "";
     const confirmEnabled = isMissionConfirmEnabled();
     els.missionSubmitBtn.classList.toggle("hidden", !confirmEnabled);
+    els.missionPauseBtn.textContent = state.game.paused ? "Resume" : "Pause";
     els.missionSettingsAccessBtn.textContent = state.game.missionFocusLocked ? "Adjust Settings" : "Return to Mission Focus";
     els.missionSettingsAccessBtn.setAttribute("aria-pressed", state.game.missionFocusLocked ? "false" : "true");
 
@@ -1725,6 +1767,8 @@
       els.missionSettingsAccessBtn.disabled = true;
       els.missionHintBtn.disabled = true;
       els.missionSubmitBtn.disabled = true;
+      els.missionPauseBtn.disabled = true;
+      els.missionSkipBtn.disabled = true;
       return;
     }
     if (state.game.gameOver) {
@@ -1736,6 +1780,8 @@
       els.missionSettingsAccessBtn.disabled = true;
       els.missionHintBtn.disabled = true;
       els.missionSubmitBtn.disabled = true;
+      els.missionPauseBtn.disabled = true;
+      els.missionSkipBtn.disabled = true;
       return;
     }
     if (state.game.modeChangeRestartRequired) {
@@ -1743,6 +1789,8 @@
       els.missionSettingsAccessBtn.disabled = true;
       els.missionHintBtn.disabled = true;
       els.missionSubmitBtn.disabled = true;
+      els.missionPauseBtn.disabled = true;
+      els.missionSkipBtn.disabled = true;
       return;
     }
 
@@ -1780,6 +1828,8 @@
     els.missionSettingsAccessBtn.disabled = state.game.gameOver;
     els.missionHintBtn.disabled = state.game.paused || state.game.gameOver || !state.game.missionRound;
     els.missionSubmitBtn.disabled = !confirmEnabled || state.game.paused || state.game.gameOver || !state.game.missionRound;
+    els.missionPauseBtn.disabled = state.game.gameOver || state.game.modeChangeRestartRequired;
+    els.missionSkipBtn.disabled = state.game.paused || state.game.gameOver || !state.game.missionRound;
   }
 
   function updateHud() {
@@ -1819,6 +1869,13 @@
     els.rightBtn.disabled = !isRunning || isMissionAccessibleMode();
     els.fireBtn.disabled = !isRunning || state.game.mode !== "classic";
     els.pauseBtn.textContent = "Pause";
+    if (els.missionPauseBtn) {
+      els.missionPauseBtn.textContent = "Pause";
+      els.missionPauseBtn.disabled = !isRunning;
+    }
+    if (els.missionSkipBtn) {
+      els.missionSkipBtn.disabled = !isRunning;
+    }
     renderMissionAccessibleArena();
   }
 
@@ -1834,6 +1891,185 @@
       return;
     }
     els.liveRegion.textContent = message;
+  }
+
+  function isSoundEnabled() {
+    return !!(els.soundEffects && els.soundEffects.checked);
+  }
+
+  function getAudioContext() {
+    if (!audioState.supported) {
+      return null;
+    }
+    if (!audioState.ctx) {
+      const AudioCtor = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtor) {
+        audioState.supported = false;
+        return null;
+      }
+      audioState.ctx = new AudioCtor();
+      audioState.masterGain = audioState.ctx.createGain();
+      audioState.masterGain.gain.value = 0.44;
+      audioState.masterGain.connect(audioState.ctx.destination);
+    }
+    return audioState.ctx;
+  }
+
+  function tryResumeAudioContext() {
+    const audioCtx = getAudioContext();
+    if (!audioCtx) {
+      return;
+    }
+    if (audioCtx.state === "suspended") {
+      audioCtx.resume().catch(() => {
+        // Ignore resume failures; sound will try again on next user gesture.
+      });
+    }
+  }
+
+  function playTone(options) {
+    if (!isSoundEnabled()) {
+      return;
+    }
+    const audioCtx = getAudioContext();
+    if (!audioCtx) {
+      return;
+    }
+    tryResumeAudioContext();
+    const now = audioCtx.currentTime;
+    const startAt = now + (options.startOffset || 0);
+    const attack = Math.max(0.005, options.attack || 0.01);
+    const duration = Math.max(0.04, options.duration || 0.12);
+    const gainValue = Math.max(0.0001, options.gain || 0.08);
+    const osc = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+    osc.type = options.type || "sine";
+    osc.frequency.setValueAtTime(Math.max(30, options.freq || 440), startAt);
+    if (Number.isFinite(options.endFreq) && options.endFreq > 0) {
+      osc.frequency.exponentialRampToValueAtTime(options.endFreq, startAt + duration);
+    }
+    gainNode.gain.setValueAtTime(0.0001, startAt);
+    gainNode.gain.exponentialRampToValueAtTime(gainValue, startAt + attack);
+    gainNode.gain.exponentialRampToValueAtTime(0.0001, startAt + duration);
+    osc.connect(gainNode);
+    gainNode.connect(audioState.masterGain);
+    osc.start(startAt);
+    osc.stop(startAt + duration + 0.02);
+  }
+
+  function playClassicHitExplosion() {
+    playTone({ type: "sawtooth", freq: 240, endFreq: 50, duration: 0.22, gain: 0.11, attack: 0.008 });
+    playTone({ type: "triangle", freq: 720, endFreq: 280, duration: 0.14, gain: 0.06, startOffset: 0.02 });
+  }
+
+  function playClassicWrongTone() {
+    playTone({ type: "square", freq: 230, endFreq: 160, duration: 0.12, gain: 0.07 });
+    playTone({ type: "square", freq: 170, endFreq: 120, duration: 0.13, gain: 0.06, startOffset: 0.08 });
+  }
+
+  function playBannerWinBleep() {
+    playTone({ type: "sine", freq: 520, endFreq: 760, duration: 0.1, gain: 0.07 });
+    playTone({ type: "triangle", freq: 760, endFreq: 980, duration: 0.08, gain: 0.05, startOffset: 0.1 });
+  }
+
+  function playMissionPositiveCue() {
+    playTone({ type: "sine", freq: 460, endFreq: 640, duration: 0.11, gain: 0.06 });
+    playTone({ type: "sine", freq: 660, endFreq: 820, duration: 0.09, gain: 0.05, startOffset: 0.1 });
+  }
+
+  function playMissionNegativeCue() {
+    playTone({ type: "triangle", freq: 250, endFreq: 140, duration: 0.18, gain: 0.065 });
+  }
+
+  function startEngineLoop() {
+    if (audioState.engineOn || !isSoundEnabled()) {
+      return;
+    }
+    const audioCtx = getAudioContext();
+    if (!audioCtx || !audioState.masterGain) {
+      return;
+    }
+    tryResumeAudioContext();
+    const now = audioCtx.currentTime;
+    const engineOsc = audioCtx.createOscillator();
+    const engineGain = audioCtx.createGain();
+    const engineFilter = audioCtx.createBiquadFilter();
+    const engineLfo = audioCtx.createOscillator();
+    const engineLfoDepth = audioCtx.createGain();
+
+    engineOsc.type = "sawtooth";
+    engineOsc.frequency.setValueAtTime(78, now);
+    engineGain.gain.setValueAtTime(0.0001, now);
+    engineGain.gain.exponentialRampToValueAtTime(0.022, now + 0.2);
+    engineFilter.type = "lowpass";
+    engineFilter.frequency.setValueAtTime(340, now);
+    engineFilter.Q.value = 0.8;
+
+    engineLfo.type = "sine";
+    engineLfo.frequency.value = 3.1;
+    engineLfoDepth.gain.value = 0.004;
+    engineLfo.connect(engineLfoDepth);
+    engineLfoDepth.connect(engineGain.gain);
+
+    engineOsc.connect(engineFilter);
+    engineFilter.connect(engineGain);
+    engineGain.connect(audioState.masterGain);
+
+    engineOsc.start(now);
+    engineLfo.start(now);
+
+    audioState.engineOsc = engineOsc;
+    audioState.engineLfo = engineLfo;
+    audioState.engineGain = engineGain;
+    audioState.engineOn = true;
+  }
+
+  function stopEngineLoop() {
+    if (!audioState.engineOn) {
+      return;
+    }
+    const audioCtx = audioState.ctx;
+    const stopAt = audioCtx ? audioCtx.currentTime + 0.05 : 0;
+    if (audioState.engineGain && audioCtx) {
+      try {
+        audioState.engineGain.gain.cancelScheduledValues(audioCtx.currentTime);
+        audioState.engineGain.gain.setTargetAtTime(0.0001, audioCtx.currentTime, 0.04);
+      } catch {
+        // Ignore envelope errors while cleaning up.
+      }
+    }
+    if (audioState.engineOsc) {
+      try {
+        audioState.engineOsc.stop(stopAt);
+      } catch {
+        // Ignore stop errors.
+      }
+    }
+    if (audioState.engineLfo) {
+      try {
+        audioState.engineLfo.stop(stopAt);
+      } catch {
+        // Ignore stop errors.
+      }
+    }
+    audioState.engineOsc = null;
+    audioState.engineLfo = null;
+    audioState.engineGain = null;
+    audioState.engineOn = false;
+  }
+
+  function syncEngineSound() {
+    const shouldRun = isSoundEnabled()
+      && state.game.running
+      && !state.game.paused
+      && !state.game.gameOver
+      && !state.game.modeChangeRestartRequired
+      && state.game.mode === "banner_drive";
+    if (shouldRun) {
+      startEngineLoop();
+      return;
+    }
+    stopEngineLoop();
   }
 
   function loop(now) {
@@ -2435,7 +2671,7 @@
       missionConfirm: !!(els.missionConfirm && els.missionConfirm.checked),
       missionHints: !!(els.missionHints && els.missionHints.checked),
       reduceMotion: !!els.reduceMotion.checked,
-      highContrast: !!els.highContrast.checked,
+      soundEffects: !!(els.soundEffects && els.soundEffects.checked),
       initials: sanitizeInitials(els.initials.value)
     };
     state.settings = settings;
