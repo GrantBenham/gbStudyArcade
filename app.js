@@ -27,8 +27,8 @@
 
   const ROUND_CONFIG = {
     wrongScorePenalty: 25,
-    missScorePenalty: 8,
-    skipScorePenalty: 6,
+    missScorePenalty: 10,
+    skipScorePenalty: 10,
     breachIntegrityPenalty: 10,
     roundSettleMs: 420
   };
@@ -1603,15 +1603,12 @@
     state.game.roundsCompleted += 1;
 
     if (isCorrect) {
-      const bonus = isMissionTimed() && Number.isFinite(round.timeLeftMs)
-        ? Math.max(0, Math.round(round.timeLeftMs / 250))
-        : 0;
-      state.game.score += 100 + bonus;
+      state.game.score += 100;
       state.game.missionStreak += 1;
       state.game.missionBestStreak = Math.max(state.game.missionBestStreak, state.game.missionStreak);
       state.game.correctTerms.push(round.target.term);
       renderCorrectTerms();
-      state.game.missionFeedback = bonus > 0 ? `Correct! +${100 + bonus} points.` : "Correct! +100 points.";
+      state.game.missionFeedback = "Correct! +100 points.";
     } else {
       state.game.score = Math.max(0, state.game.score - getPenaltyAmount(ROUND_CONFIG.wrongScorePenalty));
       state.game.missionStreak = 0;
