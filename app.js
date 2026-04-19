@@ -669,20 +669,20 @@
       text = await file.text();
     } catch {
       announce("Could not read that file. Please choose a valid .txt file.", true);
-      setTermsSourceIndicator("error");
+      setTermsSourceIndicator("error", "file could not be read");
       return;
     }
 
     if (!hasRequiredCopyrightNotice(text)) {
       announce(`This file is missing required text: "${REQUIRED_COPYRIGHT_NOTICE}".`, true);
-      setTermsSourceIndicator("error");
+      setTermsSourceIndicator("error", "missing required copyright line");
       return;
     }
 
     const parsed = parseTermsText(text);
     if (!Object.keys(parsed.topics).length) {
       announce("No valid topics were found in that file. Use the provided terms.txt template and keep the instruction header.", true);
-      setTermsSourceIndicator("error");
+      setTermsSourceIndicator("error", "no valid topics found");
       return;
     }
 
@@ -700,7 +700,8 @@
       return;
     }
     if (sourceType === "error") {
-      els.termsSourceIndicator.textContent = "Term Source: load failed (choose a valid .txt file)";
+      const reason = label ? String(label).trim() : "choose a valid .txt file";
+      els.termsSourceIndicator.textContent = `Term Source: load failed (${reason})`;
       els.termsSourceIndicator.dataset.source = "error";
       return;
     }
@@ -722,9 +723,23 @@
   }
 
   function hasRequiredCopyrightNotice(text) {
-    const required = REQUIRED_COPYRIGHT_NOTICE.toLowerCase();
+    const required = normalizeCopyrightLine(REQUIRED_COPYRIGHT_NOTICE);
     const lines = String(text || "").replace(/\r\n/g, "\n").split("\n");
-    return lines.some((line) => repairMojibake(line).trim().toLowerCase() === required);
+    return lines.some((line) => {
+      const normalized = normalizeCopyrightLine(repairMojibake(line));
+      return normalized.includes(required);
+    });
+  }
+
+  function normalizeCopyrightLine(line) {
+    const withoutCommentPrefix = String(line || "")
+      .replace(/^\uFEFF/, "")
+      .replace(/^\s*(\/\/|;)\s*/, "");
+    return withoutCommentPrefix
+      .toLowerCase()
+      .replace(/[.,:;'"`"]/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
   }
 
   function isIgnoredInstructionLine(cleanedLine) {
