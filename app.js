@@ -99,6 +99,8 @@
     scoresList: document.getElementById("scores-list"),
     clearScoresBtn: document.getElementById("clear-scores-btn"),
     correctTermsList: document.getElementById("correct-terms-list"),
+    missedReviewNote: document.getElementById("missed-review-note"),
+    missedReviewList: document.getElementById("missed-review-list"),
     termsSourceIndicator: document.getElementById("terms-source-indicator"),
     scoreStorageNote: document.getElementById("score-storage-note"),
     liveRegion: document.getElementById("live-region")
@@ -135,6 +137,7 @@
   updateStorageNote();
   renderScoreboard();
   renderCorrectTerms();
+  renderMissedReview();
   renderTopicList();
   setTermsSourceIndicator("none");
   setDefinitionText("Load a terms .txt file, then press Start Mission.");
@@ -158,6 +161,7 @@
       allPairs: [],
       remainingTargets: [],
       correctTerms: [],
+      missedReviewByKey: {},
       mode: DEFAULT_GAME_MODE,
       leftPressed: false,
       rightPressed: false,
@@ -1049,6 +1053,7 @@
     state.game.remainingTargets = shuffle(pairs.slice());
     state.game.nextRoundAt = performance.now();
     state.game.correctTerms = [];
+    state.game.missedReviewByKey = {};
     state.game.leftPressed = false;
     state.game.rightPressed = false;
     state.game.activeBannerSets = [];
@@ -1096,6 +1101,7 @@
     }
     updateHud();
     renderCorrectTerms();
+    renderMissedReview();
     if (state.game.mode === "mission_accessible") {
       announce("Mission started. Use the Mission Accessible arena to choose and submit answers.");
       focusMissionPrimaryControl();
@@ -1304,6 +1310,7 @@
       createBeam(lane, false);
       state.game.score = Math.max(0, state.game.score - getPenaltyAmount(ROUND_CONFIG.missScorePenalty));
       playClassicWrongTone();
+      addMissedReviewEntry(state.game.currentTarget && (state.game.currentTarget.pair || state.game.currentTarget), "No hit in selected lane");
       if (registerMistake("missed shot")) {
         return;
       }
@@ -1335,6 +1342,7 @@
 
     state.game.score = Math.max(0, state.game.score - getPenaltyAmount(ROUND_CONFIG.wrongScorePenalty));
     playClassicWrongTone();
+    addMissedReviewEntry(state.game.currentTarget && (state.game.currentTarget.pair || state.game.currentTarget), "Wrong term selected");
     if (registerMistake("wrong answer")) {
       return;
     }
@@ -1356,6 +1364,7 @@
     }
     if (reason === "breach") {
       const breaches = Math.max(1, Number(options && options.breachCount) || 1);
+      unresolvedTerms.forEach((term) => addMissedReviewEntry(term && term.pair, "Term reached city"));
       state.game.cityIntegrity = Math.max(0, state.game.cityIntegrity - getPenaltyAmount(ROUND_CONFIG.breachIntegrityPenalty) * breaches);
       if (registerMistake("breached terms", breaches)) {
         return;
@@ -1555,6 +1564,7 @@
       const penalty = bannerUnderCar ? getPenaltyAmount(ROUND_CONFIG.wrongScorePenalty) : getPenaltyAmount(ROUND_CONFIG.missScorePenalty);
       state.game.score = Math.max(0, state.game.score - penalty);
       playClassicWrongTone();
+      addMissedReviewEntry(set.target, bannerUnderCar ? "Wrong gate selection" : "Missed all gates");
       if (registerMistake(bannerUnderCar ? "wrong gate" : "missed gate")) {
         return;
       }
@@ -1599,6 +1609,7 @@
     toggleGameButtons(false);
     syncEngineSound();
     saveScore();
+    renderMissedReview();
     announce(`${won ? "Mission complete" : "City overrun"}. Final score ${state.game.score}.`, true);
   }
 
@@ -1655,6 +1666,74 @@
       const li = document.createElement("li");
       li.textContent = term;
       els.correctTermsList.appendChild(li);
+    });
+  }
+
+  function buildReviewKey(pair) {
+    const term = pair && pair.term ? String(pair.term) : "";
+    const definition = pair && pair.definition ? String(pair.definition) : "";
+    return `${term}\u241f${definition}`;
+  }
+
+  function addMissedReviewEntry(pair, reason) {
+    if (!pair || !pair.term || !pair.definition) {
+      return;
+    }
+    const key = buildReviewKey(pair);
+    let entry = state.game.missedReviewByKey[key];
+    if (!entry) {
+      entry = {
+        term: String(pair.term),
+        definition: String(pair.definition),
+        count: 0,
+        reasons: []
+      };
+      state.game.missedReviewByKey[key] = entry;
+    }
+    entry.count += 1;
+    if (reason) {
+      const reasonText = String(reason);
+      if (!entry.reasons.includes(reasonText)) {
+        entry.reasons.push(reasonText);
+      }
+    }
+    renderMissedReview();
+  }
+
+  function renderMissedReview() {
+    if (!els.missedReviewList || !els.missedReviewNote) {
+      return;
+    }
+    els.missedReviewList.innerHTML = "";
+    const reviewEntries = Object.values(state.game.missedReviewByKey || {})
+      .sort((a, b) => b.count - a.count || a.term.localeCompare(b.term));
+
+    if (!state.game.gameOver) {
+      els.missedReviewNote.textContent = state.game.running
+        ? "Complete this mission to view missed terms."
+        : "Finish a mission to view missed terms.";
+      const li = document.createElement("li");
+      li.className = "scores-empty";
+      li.textContent = "Post-mission review appears here.";
+      els.missedReviewList.appendChild(li);
+      return;
+    }
+
+    if (!reviewEntries.length) {
+      els.missedReviewNote.textContent = "No missed terms in this mission.";
+      const li = document.createElement("li");
+      li.className = "scores-empty";
+      li.textContent = "Great run: no missed terms to review.";
+      els.missedReviewList.appendChild(li);
+      return;
+    }
+
+    els.missedReviewNote.textContent = "Missed terms from this mission (with miss count):";
+    reviewEntries.forEach((entry) => {
+      const li = document.createElement("li");
+      const countSuffix = entry.count === 1 ? "1 miss" : `${entry.count} misses`;
+      li.textContent = `${entry.term} (${countSuffix}): ${entry.definition}`;
+      els.missedReviewList.appendChild(li);
     });
   }
 
@@ -1796,6 +1875,7 @@
       state.game.missionStreak = 0;
       state.game.missionWrong += 1;
       playMissionNegativeCue();
+      addMissedReviewEntry(round.target, timeout ? "Timed out" : "Incorrect choice");
       reinsertTarget(round.target);
       if (timeout) {
         state.game.missionTimedOut += 1;
