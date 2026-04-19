@@ -1,3 +1,12 @@
+// Study Arcade terms template
+Study Arcade, copyright Dr. Grant Benham
+// Keep the line above exactly as written. Do not delete it.
+// Add or edit topics and term-definition pairs below.
+// Format examples:
+// # Topic Name
+// Term: Definition
+// Another term: Another definition
+
 # Cellular Biology
 Ribosomes: Structures that synthesize new protein molecules
 Endoplasmic reticulum: A network of thin tubes that transport newly synthesized proteins to other locations

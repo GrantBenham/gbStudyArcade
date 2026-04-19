@@ -16,6 +16,7 @@
   const DEFAULT_MISSION_PACE = "untimed";
   const DEFAULT_MISSION_TIME_LIMIT_SECONDS = 30;
   const DEFAULT_CLASSIC_START_LANE = Math.floor(LANE_COUNT / 2);
+  const REQUIRED_COPYRIGHT_NOTICE = "Study Arcade, copyright Dr. Grant Benham";
 
   const FALL_SPEED_MULTIPLIER = {
     slow: 0.7,
@@ -672,9 +673,15 @@
       return;
     }
 
+    if (!hasRequiredCopyrightNotice(text)) {
+      announce(`This file is missing required text: "${REQUIRED_COPYRIGHT_NOTICE}".`, true);
+      setTermsSourceIndicator("error");
+      return;
+    }
+
     const parsed = parseTermsText(text);
     if (!Object.keys(parsed.topics).length) {
-      announce("No valid topics found in that file. Check #Topic and Term: Definition format.", true);
+      announce("No valid topics were found in that file. Use the provided terms.txt template and keep the instruction header.", true);
       setTermsSourceIndicator("error");
       return;
     }
@@ -714,6 +721,19 @@
     els.startBtn.disabled = !hasTerms;
   }
 
+  function hasRequiredCopyrightNotice(text) {
+    const required = REQUIRED_COPYRIGHT_NOTICE.toLowerCase();
+    const lines = String(text || "").replace(/\r\n/g, "\n").split("\n");
+    return lines.some((line) => repairMojibake(line).trim().toLowerCase() === required);
+  }
+
+  function isIgnoredInstructionLine(cleanedLine) {
+    if (!cleanedLine) {
+      return true;
+    }
+    return cleanedLine.startsWith("//") || cleanedLine.startsWith(";");
+  }
+
   function parseTermsText(text) {
     const topics = {};
     let currentTopic = "";
@@ -721,7 +741,7 @@
 
     for (const rawLine of lines) {
       const cleaned = repairMojibake(rawLine).trim();
-      if (!cleaned) {
+      if (isIgnoredInstructionLine(cleaned)) {
         continue;
       }
       if (cleaned.startsWith("#")) {
