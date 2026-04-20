@@ -167,7 +167,7 @@
       rightPressed: false,
       car: null,
       activeBannerSets: [],
-      signalRound: null,
+      memoryRound: null,
       lastBannerSpawnAt: 0,
       beam: null,
       pulseAt: 0,
@@ -416,12 +416,12 @@
     els.pauseBtn.addEventListener("click", togglePause);
     els.skipBtn.addEventListener("click", skipDefinition);
     els.leftBtn.addEventListener("click", () => {
-      if (state.game.mode === "classic" || state.game.mode === "signal_lock") {
+      if (state.game.mode === "classic" || state.game.mode === "memory_relay") {
         moveLeftControl(false);
       }
     });
     els.rightBtn.addEventListener("click", () => {
-      if (state.game.mode === "classic" || state.game.mode === "signal_lock") {
+      if (state.game.mode === "classic" || state.game.mode === "memory_relay") {
         moveRightControl(false);
       }
     });
@@ -490,7 +490,7 @@
           return;
         }
       }
-      if (key >= "1" && key <= "3" && (state.game.mode === "classic" || state.game.mode === "signal_lock")) {
+      if (key >= "1" && key <= "3" && (state.game.mode === "classic" || state.game.mode === "memory_relay")) {
         event.preventDefault();
         selectLane(Number(key) - 1);
       } else if (key === "ArrowLeft" && !isMissionAccessibleMode()) {
@@ -500,7 +500,7 @@
         event.preventDefault();
         moveRightControl(true);
       } else if (key === " " || key === "Enter") {
-        if (state.game.mode === "classic" || state.game.mode === "signal_lock") {
+        if (state.game.mode === "classic" || state.game.mode === "memory_relay") {
           event.preventDefault();
           fireAtSelectedLane();
         }
@@ -708,7 +708,7 @@
   function updateModeUI(mode) {
     const selectedMode = mode || DEFAULT_GAME_MODE;
     const isClassic = selectedMode === "classic";
-    const isSignalLock = selectedMode === "signal_lock";
+    const isMemoryRelay = selectedMode === "memory_relay";
     const isMission = isMissionAccessibleMode(selectedMode);
     if (!isMission) {
       state.game.missionFocusLocked = false;
@@ -724,7 +724,7 @@
       els.missionDefinitionBox.classList.toggle("hidden", !isMission);
     }
     if (els.speedField) {
-      els.speedField.classList.toggle("hidden", isMission || isSignalLock);
+      els.speedField.classList.toggle("hidden", isMission || isMemoryRelay);
     }
     if (els.mistakeLimitField) {
       els.mistakeLimitField.classList.toggle("hidden", isMission);
@@ -739,7 +739,13 @@
       els.missionTimeLimit.disabled = !isMissionTimed();
     }
     if (els.skipBtn) {
-      els.skipBtn.textContent = isMission ? "Skip Prompt" : "Skip Definition";
+      if (isMission) {
+        els.skipBtn.textContent = "Skip Prompt";
+      } else if (isMemoryRelay) {
+        els.skipBtn.textContent = "Skip Set";
+      } else {
+        els.skipBtn.textContent = "Skip Definition";
+      }
       els.skipBtn.classList.toggle("hidden", isMission);
     }
     if (els.pauseBtn) {
@@ -749,11 +755,11 @@
     if (els.mistakesHudItem) {
       els.mistakesHudItem.classList.toggle("hidden", isMission);
     }
-    els.fireBtn.disabled = !state.game.running || (selectedMode !== "classic" && selectedMode !== "signal_lock");
+    els.fireBtn.disabled = !state.game.running || (selectedMode !== "classic" && selectedMode !== "memory_relay");
     if (isClassic) {
       els.helpText.innerHTML = "Use Left/Right controls, <kbd>1</kbd> to <kbd>3</kbd>, or arrow keys to select a lane. Press Fire, <kbd>Enter</kbd>, or <kbd>Space</kbd> to shoot. Use <kbd>P</kbd> to pause and <kbd>K</kbd> to skip definition.";
-    } else if (isSignalLock) {
-      els.helpText.innerHTML = "Signal Lock: choose a signal with Left/Right controls, <kbd>1</kbd> to <kbd>3</kbd>, or arrows. Press Fire, <kbd>Enter</kbd>, or <kbd>Space</kbd> to lock your choice. Use <kbd>P</kbd> to pause and <kbd>K</kbd> to skip.";
+    } else if (isMemoryRelay) {
+      els.helpText.innerHTML = "Memory Relay: memorize all three terms, then answer after they are hidden. Use <kbd>1</kbd> to <kbd>3</kbd> or arrows to select and Fire/<kbd>Enter</kbd>/<kbd>Space</kbd> to submit one choice.";
     } else if (selectedMode === "banner_drive") {
       els.helpText.innerHTML = "Use Left/Right controls or <kbd>Left</kbd>/<kbd>Right</kbd> arrows to steer smoothly. Guide the car under the correct banner. Use <kbd>P</kbd> to pause and <kbd>K</kbd> to skip current set.";
     } else {
@@ -951,7 +957,7 @@
     if (!state.game.running || state.game.gameOver || state.game.paused) {
       return;
     }
-    if (state.game.mode === "classic" || state.game.mode === "signal_lock") {
+    if (state.game.mode === "classic" || state.game.mode === "memory_relay") {
       selectLane(Math.max(0, state.game.selectedLane - 1));
       return;
     }
@@ -973,7 +979,7 @@
     if (!state.game.running || state.game.gameOver || state.game.paused) {
       return;
     }
-    if (state.game.mode === "classic" || state.game.mode === "signal_lock") {
+    if (state.game.mode === "classic" || state.game.mode === "memory_relay") {
       selectLane(Math.min(LANE_COUNT - 1, state.game.selectedLane + 1));
       return;
     }
@@ -1061,7 +1067,7 @@
     state.game.leftPressed = false;
     state.game.rightPressed = false;
     state.game.activeBannerSets = [];
-    state.game.signalRound = null;
+    state.game.memoryRound = null;
     state.game.lastBannerSpawnAt = 0;
     state.game.car = null;
     state.game.missionRound = null;
@@ -1089,8 +1095,8 @@
       };
       state.game.lastBannerSpawnAt = performance.now() - getBannerSpawnInterval();
       setDefinitionText("Preparing first banner set...");
-    } else if (state.game.mode === "signal_lock") {
-      setDefinitionText("Preparing signal lock set...");
+    } else if (state.game.mode === "memory_relay") {
+      setDefinitionText("Preparing Memory Relay set...");
       state.game.nextRoundAt = performance.now();
     } else {
       setDefinitionText("Preparing mission prompt...");
@@ -1104,8 +1110,8 @@
       startNextRound(performance.now());
     } else if (state.game.mode === "banner_drive") {
       spawnBannerSet(performance.now());
-    } else if (state.game.mode === "signal_lock") {
-      startNextSignalLockRound(performance.now());
+    } else if (state.game.mode === "memory_relay") {
+      startNextMemoryRelayRound(performance.now());
     } else {
       startNextMissionAccessiblePrompt();
     }
@@ -1115,8 +1121,8 @@
     if (state.game.mode === "mission_accessible") {
       announce("Mission started. Use the Mission Accessible arena to choose and submit answers.");
       focusMissionPrimaryControl();
-    } else if (state.game.mode === "signal_lock") {
-      announce("Mission started. Lock onto the signal that matches each definition.");
+    } else if (state.game.mode === "memory_relay") {
+      announce("Mission started. Memorize terms first, then match the hidden-position definition.");
       els.canvas.focus();
     } else {
       announce("Mission started. Match the definition to the correct term.");
@@ -1177,11 +1183,11 @@
       renderMissionAccessibleArena();
       return;
     }
-    if (state.game.mode === "signal_lock") {
-      if (state.game.signalRound && state.game.signalRound.target) {
-        setDefinitionText(state.game.signalRound.target.definition);
+    if (state.game.mode === "memory_relay") {
+      if (state.game.memoryRound && state.game.memoryRound.target) {
+        setDefinitionText(state.game.memoryRound.target.definition);
       } else {
-        setDefinitionText("Loading next signal set...");
+        setDefinitionText("Loading next memory set...");
       }
       return;
     }
@@ -1236,15 +1242,15 @@
       return true;
     }
 
-    if (state.game.mode === "signal_lock") {
-      if (!state.game.signalRound || !state.game.signalRound.target) {
+    if (state.game.mode === "memory_relay") {
+      if (!state.game.memoryRound || !state.game.memoryRound.target) {
         return false;
       }
-      reinsertTarget(state.game.signalRound.target);
-      state.game.signalRound = null;
+      reinsertTarget(state.game.memoryRound.target);
+      state.game.memoryRound = null;
       state.game.currentTarget = null;
       state.game.nextRoundAt = performance.now();
-      setDefinitionText("Settings updated. New signal set will load when you resume.");
+      setDefinitionText("Settings updated. New memory set will load when you resume.");
       updateHud();
       return true;
     }
@@ -1314,18 +1320,18 @@
       announce("Wave skipped. New wave starting.");
       return;
     }
-    if (state.game.mode === "signal_lock") {
-      if (!state.game.signalRound || !state.game.signalRound.target) {
+    if (state.game.mode === "memory_relay") {
+      if (!state.game.memoryRound || !state.game.memoryRound.target) {
         return;
       }
       state.game.score = Math.max(0, state.game.score - getPenaltyAmount(ROUND_CONFIG.skipScorePenalty));
-      reinsertTarget(state.game.signalRound.target);
-      state.game.signalRound = null;
+      reinsertTarget(state.game.memoryRound.target);
+      state.game.memoryRound = null;
       state.game.currentTarget = null;
       state.game.nextRoundAt = performance.now() + 120;
-      setDefinitionText("Signal skipped. Loading next set...");
+      setDefinitionText("Memory set skipped. Loading next set...");
       updateHud();
-      announce("Current signal set skipped.");
+      announce("Current memory set skipped.");
       return;
     }
     // Banner Drive: skip nearest unresolved banner set and keep its definition in play.
@@ -1345,8 +1351,8 @@
   }
 
   function fireAtSelectedLane() {
-    if (state.game.mode === "signal_lock") {
-      lockSignalLane();
+    if (state.game.mode === "memory_relay") {
+      submitMemoryRelayChoice();
       return;
     }
     if (state.game.mode !== "classic") {
@@ -1476,18 +1482,23 @@
     setDefinitionText(state.game.currentTarget.definition);
   }
 
-  function getSignalTransitionDelay() {
-    return els.reduceMotion.checked ? 90 : 300;
+  function getMemoryRevealDuration() {
+    return els.reduceMotion.checked ? 6000 : 4500;
   }
 
-  function startNextSignalLockRound(now) {
-    if (!state.game.running || state.game.gameOver || state.game.paused || state.game.mode !== "signal_lock") {
+  function getMemoryFeedbackDuration() {
+    return els.reduceMotion.checked ? 280 : 760;
+  }
+
+  function getMemoryTransitionDelay() {
+    return els.reduceMotion.checked ? 100 : 220;
+  }
+
+  function startNextMemoryRelayRound(now) {
+    if (!state.game.running || state.game.gameOver || state.game.paused || state.game.mode !== "memory_relay") {
       return;
     }
-    if (state.game.signalRound) {
-      return;
-    }
-    if (now < state.game.nextRoundAt) {
+    if (state.game.memoryRound || now < state.game.nextRoundAt) {
       return;
     }
     if (!state.game.remainingTargets.length) {
@@ -1504,35 +1515,43 @@
       optionsByLane[lane] = pairs[index];
     });
 
-    state.game.signalRound = {
+    state.game.memoryRound = {
       id: cryptoRandomId(),
       target,
       optionsByLane,
-      resolved: false,
+      phase: "reveal",
+      phaseEndsAt: now + getMemoryRevealDuration(),
       chosenLane: -1,
       result: "pending"
     };
     state.game.currentTarget = target;
-    setDefinitionText(target.definition);
+    setDefinitionText("Memorize all three terms and where each appears.");
     updateHud();
+    announce("Memory Relay set shown. Memorize positions now.");
   }
 
-  function lockSignalLane() {
-    if (!state.game.running || state.game.gameOver || state.game.paused || state.game.mode !== "signal_lock") {
+  function submitMemoryRelayChoice() {
+    if (!state.game.running || state.game.gameOver || state.game.paused || state.game.mode !== "memory_relay") {
       return;
     }
-    const round = state.game.signalRound;
-    if (!round || round.resolved || !round.target) {
+    const round = state.game.memoryRound;
+    if (!round || !round.target) {
       return;
     }
+    if (round.phase !== "recall") {
+      announce("Wait for the definition prompt before submitting.");
+      return;
+    }
+
     const lane = state.game.selectedLane;
     const selectedPair = round.optionsByLane[lane];
     if (!selectedPair) {
       return;
     }
 
-    round.resolved = true;
     round.chosenLane = lane;
+    round.phase = "feedback";
+    round.phaseEndsAt = performance.now() + getMemoryFeedbackDuration();
     state.game.roundsCompleted += 1;
     const isCorrect = selectedPair.term === round.target.term;
 
@@ -1543,27 +1562,22 @@
       state.game.pulseAt = performance.now();
       playBannerWinBleep();
       renderCorrectTerms();
-      announce("Signal lock confirmed.");
+      setDefinitionText("Correct memory match. Loading next set...");
+      announce("Correct memory match.");
     } else {
       round.result = "wrong";
       state.game.score = Math.max(0, state.game.score - getPenaltyAmount(ROUND_CONFIG.wrongScorePenalty));
       playClassicWrongTone();
-      addMissedReviewEntry(round.target, "Wrong signal lock");
-      if (registerMistake("wrong signal lock")) {
+      addMissedReviewEntry(round.target, "Incorrect memory choice");
+      if (registerMistake("incorrect memory choice")) {
         return;
       }
       reinsertTarget(round.target);
-      announce("Signal mismatch.");
+      setDefinitionText("Incorrect memory match. Prompt recycled.");
+      announce("Incorrect memory match.");
     }
-
     state.game.currentTarget = null;
-    state.game.signalRound = null;
-    state.game.nextRoundAt = performance.now() + getSignalTransitionDelay();
-    setDefinitionText("Lock recorded. Loading next signal set...");
     updateHud();
-    if (!state.game.remainingTargets.length) {
-      finishMission(true);
-    }
   }
 
   function buildDistractors(target, needed) {
@@ -1746,7 +1760,7 @@
     state.game.won = won;
     state.game.activeTerms = [];
     state.game.currentTarget = null;
-    state.game.signalRound = null;
+    state.game.memoryRound = null;
     state.game.missionRound = null;
     state.game.missionSelectedIndex = -1;
     toggleGameButtons(false);
@@ -1891,8 +1905,8 @@
       const pendingCurrent = state.game.missionRound && !state.game.missionRound.resolved ? 1 : 0;
       return Math.max(0, state.game.remainingTargets.length + pendingCurrent);
     }
-    if (state.game.mode === "signal_lock") {
-      const pendingCurrent = state.game.signalRound ? 1 : 0;
+    if (state.game.mode === "memory_relay") {
+      const pendingCurrent = state.game.memoryRound ? 1 : 0;
       return Math.max(0, state.game.remainingTargets.length + pendingCurrent);
     }
     const unresolvedActive = state.game.activeTerms.filter((term) => term.state !== "correct_flash").length;
@@ -2236,7 +2250,7 @@
     els.skipBtn.disabled = !isRunning;
     els.leftBtn.disabled = !isRunning || isMissionAccessibleMode();
     els.rightBtn.disabled = !isRunning || isMissionAccessibleMode();
-    els.fireBtn.disabled = !isRunning || (state.game.mode !== "classic" && state.game.mode !== "signal_lock");
+    els.fireBtn.disabled = !isRunning || (state.game.mode !== "classic" && state.game.mode !== "memory_relay");
     els.pauseBtn.textContent = "Pause";
     if (els.missionPauseBtn) {
       els.missionPauseBtn.textContent = "Pause";
@@ -2469,8 +2483,8 @@
       updateMissionAccessibleGame(now, deltaMs);
       return;
     }
-    if (state.game.mode === "signal_lock") {
-      updateSignalLockGame(now);
+    if (state.game.mode === "memory_relay") {
+      updateMemoryRelayGame(now);
       return;
     }
     if (state.game.mode === "banner_drive") {
@@ -2541,16 +2555,33 @@
     }
   }
 
-  function updateSignalLockGame(now) {
-    if (state.game.signalRound) {
+  function updateMemoryRelayGame(now) {
+    const round = state.game.memoryRound;
+    if (!round) {
+      if (state.game.remainingTargets.length === 0) {
+        finishMission(true);
+        return;
+      }
+      if (now >= state.game.nextRoundAt) {
+        startNextMemoryRelayRound(now);
+      }
       return;
     }
-    if (state.game.remainingTargets.length === 0) {
-      finishMission(true);
+
+    if (round.phase === "reveal" && now >= round.phaseEndsAt) {
+      round.phase = "recall";
+      round.phaseEndsAt = Number.POSITIVE_INFINITY;
+      setDefinitionText(round.target.definition);
+      announce("Definition shown. Choose the remembered position.");
       return;
     }
-    if (now >= state.game.nextRoundAt) {
-      startNextSignalLockRound(now);
+
+    if (round.phase === "feedback" && now >= round.phaseEndsAt) {
+      state.game.memoryRound = null;
+      state.game.nextRoundAt = now + getMemoryTransitionDelay();
+      if (!state.game.remainingTargets.length) {
+        finishMission(true);
+      }
     }
   }
 
@@ -2601,24 +2632,25 @@
   }
 
   function drawGame(now) {
-    drawArenaBackground();
-    if (state.game.mode === "classic") {
-      drawLaneHighlights();
-      drawLaneGuides();
-      drawCity();
-      drawCannon();
-    } else if (state.game.mode === "signal_lock") {
-      drawLaneHighlights();
-      drawLaneGuides();
-      drawSignalLockArena(now);
+    if (state.game.mode === "memory_relay") {
+      drawMemoryRelayBackground(now);
+      drawMemoryRelayArena(now);
     } else {
-      drawBannerRoadMarks();
+      drawArenaBackground();
+      if (state.game.mode === "classic") {
+        drawLaneHighlights();
+        drawLaneGuides();
+        drawCity();
+        drawCannon();
+      } else {
+        drawBannerRoadMarks();
+      }
     }
     if (state.game.mode === "classic") {
       drawTerms(now);
       drawBeam(now);
-    } else if (state.game.mode === "signal_lock") {
-      // Signal Lock drawing happens in drawSignalLockArena.
+    } else if (state.game.mode === "memory_relay") {
+      // Memory Relay drawing happens in drawMemoryRelayArena.
     } else {
       drawBannerSets(now);
       drawCar();
@@ -2648,6 +2680,40 @@
     }
   }
 
+  function drawMemoryRelayBackground(now) {
+    const gradient = ctx.createLinearGradient(0, 0, 0, CANVAS_HEIGHT);
+    gradient.addColorStop(0, "#06172c");
+    gradient.addColorStop(0.45, "#0d2843");
+    gradient.addColorStop(1, "#102539");
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+    const glow = ctx.createRadialGradient(CANVAS_WIDTH / 2, CANVAS_HEIGHT * 0.52, 90, CANVAS_WIDTH / 2, CANVAS_HEIGHT * 0.52, CANVAS_WIDTH * 0.58);
+    glow.addColorStop(0, "rgba(77, 214, 233, 0.2)");
+    glow.addColorStop(1, "rgba(77, 214, 233, 0)");
+    ctx.fillStyle = glow;
+    ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+    const pulse = 0.05 + Math.sin(now / 420) * 0.025;
+    laneCenters.forEach((center, lane) => {
+      const laneAlpha = lane === state.game.selectedLane ? 0.11 + pulse : 0.05;
+      const laneGradient = ctx.createLinearGradient(0, 0, 0, CANVAS_HEIGHT);
+      laneGradient.addColorStop(0, `rgba(65, 183, 212, ${laneAlpha})`);
+      laneGradient.addColorStop(1, "rgba(65, 183, 212, 0.02)");
+      ctx.fillStyle = laneGradient;
+      ctx.fillRect(center - 156, 72, 312, CANVAS_HEIGHT - 142);
+    });
+
+    ctx.strokeStyle = "rgba(187, 233, 255, 0.12)";
+    ctx.lineWidth = 1;
+    for (let y = 92; y < CANVAS_HEIGHT - 18; y += 28) {
+      ctx.beginPath();
+      ctx.moveTo(28, y);
+      ctx.lineTo(CANVAS_WIDTH - 28, y);
+      ctx.stroke();
+    }
+  }
+
   function drawBannerRoadMarks() {
     ctx.save();
     ctx.fillStyle = "rgba(7, 16, 30, 0.55)";
@@ -2674,62 +2740,129 @@
     ctx.restore();
   }
 
-  function drawSignalLockArena(now) {
-    const round = state.game.signalRound;
-    const top = 110;
-    const width = 250;
-    const height = 150;
+  function drawMemoryRelayArena(now) {
+    const round = state.game.memoryRound;
+    const top = 176;
+    const width = 288;
+    const height = 188;
+    const boardLeft = 28;
+    const boardTop = 70;
+    const boardWidth = CANVAS_WIDTH - 56;
+    const boardHeight = CANVAS_HEIGHT - 116;
+
+    ctx.save();
+    ctx.fillStyle = "rgba(9, 30, 47, 0.76)";
+    ctx.fillRect(boardLeft, boardTop, boardWidth, boardHeight);
+    ctx.strokeStyle = "rgba(176, 236, 255, 0.5)";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(boardLeft, boardTop, boardWidth, boardHeight);
+    ctx.restore();
+
+    const phase = round ? round.phase : "idle";
+    const phaseLabel = phase === "reveal"
+      ? "MEMORIZE"
+      : phase === "recall"
+        ? "RECALL"
+        : phase === "feedback"
+          ? "RESULT"
+          : "READY";
+
+    ctx.save();
+    ctx.fillStyle = "rgba(12, 50, 76, 0.86)";
+    ctx.fillRect(boardLeft + 16, boardTop + 12, boardWidth - 32, 42);
+    ctx.strokeStyle = "rgba(147, 220, 255, 0.55)";
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(boardLeft + 16, boardTop + 12, boardWidth - 32, 42);
+    ctx.fillStyle = "#d7f0ff";
+    ctx.font = "bold 21px 'Lucida Console', 'Courier New', monospace";
+    ctx.textAlign = "center";
+    ctx.fillText(`MEMORY RELAY :: ${phaseLabel}`, CANVAS_WIDTH / 2, boardTop + 40);
+    ctx.restore();
+
     laneCenters.forEach((center, lane) => {
       const x = center - width / 2;
-      const isSelected = lane === state.game.selectedLane;
-      const pulse = 0.5 + 0.5 * Math.sin(now / 360 + lane);
+      const isSelected = lane === state.game.selectedLane && (phase === "reveal" || phase === "recall");
+      const cardPair = round && round.optionsByLane ? round.optionsByLane[lane] : null;
+      const chosenLane = round && round.chosenLane;
+      const revealTerms = round && round.phase === "reveal";
+      const revealFeedback = round && round.phase === "feedback";
+      const isChosenLane = revealFeedback && chosenLane === lane;
+      const isCorrectLane = revealFeedback && cardPair && round.target && cardPair.term === round.target.term;
+      const shouldShowTerm = revealTerms || revealFeedback;
+
       ctx.save();
-      ctx.fillStyle = isSelected
-        ? `rgba(23, 92, 130, ${0.58 + pulse * 0.16})`
-        : `rgba(18, 47, 73, ${0.62 + pulse * 0.1})`;
+      ctx.fillStyle = isSelected ? "#1a4d74" : "#14354f";
       ctx.fillRect(x, top, width, height);
-      ctx.strokeStyle = isSelected ? "#86ffe1" : "#6ea7d3";
-      ctx.lineWidth = isSelected ? 3 : 2;
+      if (isCorrectLane) {
+        ctx.strokeStyle = "#8effba";
+        ctx.lineWidth = 4;
+      } else if (isChosenLane) {
+        ctx.strokeStyle = "#ffb4bf";
+        ctx.lineWidth = 4;
+      } else {
+        ctx.strokeStyle = isSelected ? "#b9ffea" : "#7fb2d8";
+        ctx.lineWidth = isSelected ? 3.5 : 2;
+      }
       ctx.strokeRect(x, top, width, height);
 
-      const pair = round && round.optionsByLane ? round.optionsByLane[lane] : null;
-      if (pair) {
-        ctx.fillStyle = "#e8f5ff";
-        ctx.font = "bold 21px 'Trebuchet MS', 'Verdana', sans-serif";
-        ctx.textAlign = "center";
-        drawWrappedCenteredText(pair.term, center, top + 38, width - 24, 23, 4);
-      } else {
-        ctx.fillStyle = "#a7c4de";
-        ctx.font = "18px 'Trebuchet MS', 'Verdana', sans-serif";
-        ctx.textAlign = "center";
-        ctx.fillText("Waiting...", center, top + 78);
+      const hatchAlpha = shouldShowTerm ? 0.04 : 0.16;
+      ctx.strokeStyle = `rgba(198, 226, 255, ${hatchAlpha})`;
+      for (let y = top + 12; y < top + height - 8; y += 12) {
+        ctx.beginPath();
+        ctx.moveTo(x + 10, y);
+        ctx.lineTo(x + width - 10, y);
+        ctx.stroke();
       }
 
-      ctx.fillStyle = isSelected ? "#f9e372" : "#cde9ff";
+      if (cardPair && shouldShowTerm) {
+        ctx.fillStyle = "#edf7ff";
+        ctx.font = "bold 21px 'Trebuchet MS', 'Verdana', sans-serif";
+        ctx.textAlign = "center";
+        drawWrappedCenteredText(cardPair.term, center, top + 34, width - 24, 23, 4);
+      } else {
+        ctx.fillStyle = "#c3dcf0";
+        ctx.font = "bold 17px 'Lucida Console', 'Courier New', monospace";
+        ctx.textAlign = "center";
+        ctx.fillText("MEMORY SLOT", center, top + 94);
+        ctx.fillStyle = "#9ec1dd";
+        ctx.font = "bold 24px 'Lucida Console', 'Courier New', monospace";
+        ctx.fillText(String(lane + 1), center, top + 126);
+      }
+
+      ctx.fillStyle = isSelected ? "#ffe995" : "#cde9ff";
       ctx.font = "bold 16px 'Lucida Console', 'Courier New', monospace";
-      ctx.fillText(`Signal ${lane + 1}`, center, top + height + 28);
+      ctx.fillText(`Lane ${lane + 1}`, center, top + height + 30);
+
+      if (revealFeedback && isChosenLane) {
+        ctx.fillStyle = round.result === "correct" ? "#9cf7b4" : "#ffb8c2";
+        ctx.font = "bold 14px 'Trebuchet MS', 'Verdana', sans-serif";
+        ctx.fillText("Your choice", center, top + height + 50);
+      } else if (revealFeedback && isCorrectLane) {
+        ctx.fillStyle = "#9cf7b4";
+        ctx.font = "bold 14px 'Trebuchet MS', 'Verdana', sans-serif";
+        ctx.fillText("Correct lane", center, top + height + 50);
+      }
+
       ctx.restore();
     });
 
-    ctx.save();
-    const ringX = CANVAS_WIDTH / 2;
-    const ringY = 470;
-    const ringPulse = 0.8 + 0.2 * Math.sin(now / 280);
-    ctx.strokeStyle = "rgba(110,219,255,0.55)";
-    ctx.lineWidth = 4;
-    ctx.beginPath();
-    ctx.arc(ringX, ringY, 92 * ringPulse, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.arc(ringX, ringY, 52 * ringPulse, 0, Math.PI * 2);
-    ctx.stroke();
-
-    ctx.fillStyle = "#87a9c9";
-    ctx.fillRect(ringX - 26, ringY - 20, 52, 40);
-    ctx.strokeStyle = "#bedcff";
-    ctx.strokeRect(ringX - 26, ringY - 20, 52, 40);
-    ctx.restore();
+    if (round && round.phase === "reveal") {
+      const remaining = Math.max(0, round.phaseEndsAt - now);
+      const seconds = Math.max(0, Math.ceil(remaining / 1000));
+      ctx.save();
+      ctx.fillStyle = "#b8ffe9";
+      ctx.font = "bold 20px 'Trebuchet MS', 'Verdana', sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText(`Observe all cards: ${seconds}s`, CANVAS_WIDTH / 2, CANVAS_HEIGHT - 62);
+      ctx.restore();
+    } else if (round && round.phase === "recall") {
+      ctx.save();
+      ctx.fillStyle = "#ffe9a1";
+      ctx.font = "bold 20px 'Trebuchet MS', 'Verdana', sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("Definition active: choose the remembered lane and submit.", CANVAS_WIDTH / 2, CANVAS_HEIGHT - 62);
+      ctx.restore();
+    }
   }
 
   function drawLaneHighlights() {
@@ -3155,4 +3288,3 @@
     }
   }
 })();
-
