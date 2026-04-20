@@ -167,6 +167,7 @@
       rightPressed: false,
       car: null,
       activeBannerSets: [],
+      signalRound: null,
       lastBannerSpawnAt: 0,
       beam: null,
       pulseAt: 0,
@@ -415,12 +416,12 @@
     els.pauseBtn.addEventListener("click", togglePause);
     els.skipBtn.addEventListener("click", skipDefinition);
     els.leftBtn.addEventListener("click", () => {
-      if (state.game.mode === "classic") {
+      if (state.game.mode === "classic" || state.game.mode === "signal_lock") {
         moveLeftControl(false);
       }
     });
     els.rightBtn.addEventListener("click", () => {
-      if (state.game.mode === "classic") {
+      if (state.game.mode === "classic" || state.game.mode === "signal_lock") {
         moveRightControl(false);
       }
     });
@@ -489,7 +490,7 @@
           return;
         }
       }
-      if (key >= "1" && key <= "3" && state.game.mode === "classic") {
+      if (key >= "1" && key <= "3" && (state.game.mode === "classic" || state.game.mode === "signal_lock")) {
         event.preventDefault();
         selectLane(Number(key) - 1);
       } else if (key === "ArrowLeft" && !isMissionAccessibleMode()) {
@@ -499,7 +500,7 @@
         event.preventDefault();
         moveRightControl(true);
       } else if (key === " " || key === "Enter") {
-        if (state.game.mode === "classic") {
+        if (state.game.mode === "classic" || state.game.mode === "signal_lock") {
           event.preventDefault();
           fireAtSelectedLane();
         }
@@ -707,6 +708,7 @@
   function updateModeUI(mode) {
     const selectedMode = mode || DEFAULT_GAME_MODE;
     const isClassic = selectedMode === "classic";
+    const isSignalLock = selectedMode === "signal_lock";
     const isMission = isMissionAccessibleMode(selectedMode);
     if (!isMission) {
       state.game.missionFocusLocked = false;
@@ -722,7 +724,7 @@
       els.missionDefinitionBox.classList.toggle("hidden", !isMission);
     }
     if (els.speedField) {
-      els.speedField.classList.toggle("hidden", isMission);
+      els.speedField.classList.toggle("hidden", isMission || isSignalLock);
     }
     if (els.mistakeLimitField) {
       els.mistakeLimitField.classList.toggle("hidden", isMission);
@@ -747,9 +749,11 @@
     if (els.mistakesHudItem) {
       els.mistakesHudItem.classList.toggle("hidden", isMission);
     }
-    els.fireBtn.disabled = !state.game.running || !isClassic;
+    els.fireBtn.disabled = !state.game.running || (selectedMode !== "classic" && selectedMode !== "signal_lock");
     if (isClassic) {
       els.helpText.innerHTML = "Use Left/Right controls, <kbd>1</kbd> to <kbd>3</kbd>, or arrow keys to select a lane. Press Fire, <kbd>Enter</kbd>, or <kbd>Space</kbd> to shoot. Use <kbd>P</kbd> to pause and <kbd>K</kbd> to skip definition.";
+    } else if (isSignalLock) {
+      els.helpText.innerHTML = "Signal Lock: choose a signal with Left/Right controls, <kbd>1</kbd> to <kbd>3</kbd>, or arrows. Press Fire, <kbd>Enter</kbd>, or <kbd>Space</kbd> to lock your choice. Use <kbd>P</kbd> to pause and <kbd>K</kbd> to skip.";
     } else if (selectedMode === "banner_drive") {
       els.helpText.innerHTML = "Use Left/Right controls or <kbd>Left</kbd>/<kbd>Right</kbd> arrows to steer smoothly. Guide the car under the correct banner. Use <kbd>P</kbd> to pause and <kbd>K</kbd> to skip current set.";
     } else {
@@ -947,7 +951,7 @@
     if (!state.game.running || state.game.gameOver || state.game.paused) {
       return;
     }
-    if (state.game.mode === "classic") {
+    if (state.game.mode === "classic" || state.game.mode === "signal_lock") {
       selectLane(Math.max(0, state.game.selectedLane - 1));
       return;
     }
@@ -969,7 +973,7 @@
     if (!state.game.running || state.game.gameOver || state.game.paused) {
       return;
     }
-    if (state.game.mode === "classic") {
+    if (state.game.mode === "classic" || state.game.mode === "signal_lock") {
       selectLane(Math.min(LANE_COUNT - 1, state.game.selectedLane + 1));
       return;
     }
@@ -1057,6 +1061,7 @@
     state.game.leftPressed = false;
     state.game.rightPressed = false;
     state.game.activeBannerSets = [];
+    state.game.signalRound = null;
     state.game.lastBannerSpawnAt = 0;
     state.game.car = null;
     state.game.missionRound = null;
@@ -1084,6 +1089,9 @@
       };
       state.game.lastBannerSpawnAt = performance.now() - getBannerSpawnInterval();
       setDefinitionText("Preparing first banner set...");
+    } else if (state.game.mode === "signal_lock") {
+      setDefinitionText("Preparing signal lock set...");
+      state.game.nextRoundAt = performance.now();
     } else {
       setDefinitionText("Preparing mission prompt...");
       state.game.nextRoundAt = performance.now();
@@ -1096,6 +1104,8 @@
       startNextRound(performance.now());
     } else if (state.game.mode === "banner_drive") {
       spawnBannerSet(performance.now());
+    } else if (state.game.mode === "signal_lock") {
+      startNextSignalLockRound(performance.now());
     } else {
       startNextMissionAccessiblePrompt();
     }
@@ -1105,6 +1115,9 @@
     if (state.game.mode === "mission_accessible") {
       announce("Mission started. Use the Mission Accessible arena to choose and submit answers.");
       focusMissionPrimaryControl();
+    } else if (state.game.mode === "signal_lock") {
+      announce("Mission started. Lock onto the signal that matches each definition.");
+      els.canvas.focus();
     } else {
       announce("Mission started. Match the definition to the correct term.");
       els.canvas.focus();
@@ -1164,6 +1177,14 @@
       renderMissionAccessibleArena();
       return;
     }
+    if (state.game.mode === "signal_lock") {
+      if (state.game.signalRound && state.game.signalRound.target) {
+        setDefinitionText(state.game.signalRound.target.definition);
+      } else {
+        setDefinitionText("Loading next signal set...");
+      }
+      return;
+    }
     if (state.game.mode === "banner_drive") {
       updateBannerDefinition();
       return;
@@ -1211,6 +1232,19 @@
       state.game.currentTarget = null;
       state.game.nextRoundAt = performance.now();
       setDefinitionText("Settings updated. Wave will restart when you resume.");
+      updateHud();
+      return true;
+    }
+
+    if (state.game.mode === "signal_lock") {
+      if (!state.game.signalRound || !state.game.signalRound.target) {
+        return false;
+      }
+      reinsertTarget(state.game.signalRound.target);
+      state.game.signalRound = null;
+      state.game.currentTarget = null;
+      state.game.nextRoundAt = performance.now();
+      setDefinitionText("Settings updated. New signal set will load when you resume.");
       updateHud();
       return true;
     }
@@ -1280,6 +1314,20 @@
       announce("Wave skipped. New wave starting.");
       return;
     }
+    if (state.game.mode === "signal_lock") {
+      if (!state.game.signalRound || !state.game.signalRound.target) {
+        return;
+      }
+      state.game.score = Math.max(0, state.game.score - getPenaltyAmount(ROUND_CONFIG.skipScorePenalty));
+      reinsertTarget(state.game.signalRound.target);
+      state.game.signalRound = null;
+      state.game.currentTarget = null;
+      state.game.nextRoundAt = performance.now() + 120;
+      setDefinitionText("Signal skipped. Loading next set...");
+      updateHud();
+      announce("Current signal set skipped.");
+      return;
+    }
     // Banner Drive: skip nearest unresolved banner set and keep its definition in play.
     const leadSet = getLeadBannerSet();
     if (!leadSet) {
@@ -1297,6 +1345,10 @@
   }
 
   function fireAtSelectedLane() {
+    if (state.game.mode === "signal_lock") {
+      lockSignalLane();
+      return;
+    }
     if (state.game.mode !== "classic") {
       return;
     }
@@ -1422,6 +1474,96 @@
     const targetIndex = Math.floor(Math.random() * state.game.activeTerms.length);
     state.game.currentTarget = state.game.activeTerms[targetIndex];
     setDefinitionText(state.game.currentTarget.definition);
+  }
+
+  function getSignalTransitionDelay() {
+    return els.reduceMotion.checked ? 90 : 300;
+  }
+
+  function startNextSignalLockRound(now) {
+    if (!state.game.running || state.game.gameOver || state.game.paused || state.game.mode !== "signal_lock") {
+      return;
+    }
+    if (state.game.signalRound) {
+      return;
+    }
+    if (now < state.game.nextRoundAt) {
+      return;
+    }
+    if (!state.game.remainingTargets.length) {
+      finishMission(true);
+      return;
+    }
+
+    const target = state.game.remainingTargets.pop();
+    const distractors = buildDistractors(target, 2);
+    const laneOrder = shuffle([0, 1, 2]);
+    const pairs = shuffle([target, ...distractors]).slice(0, 3);
+    const optionsByLane = Array.from({ length: LANE_COUNT }, () => null);
+    laneOrder.forEach((lane, index) => {
+      optionsByLane[lane] = pairs[index];
+    });
+
+    state.game.signalRound = {
+      id: cryptoRandomId(),
+      target,
+      optionsByLane,
+      resolved: false,
+      chosenLane: -1,
+      result: "pending"
+    };
+    state.game.currentTarget = target;
+    setDefinitionText(target.definition);
+    updateHud();
+  }
+
+  function lockSignalLane() {
+    if (!state.game.running || state.game.gameOver || state.game.paused || state.game.mode !== "signal_lock") {
+      return;
+    }
+    const round = state.game.signalRound;
+    if (!round || round.resolved || !round.target) {
+      return;
+    }
+    const lane = state.game.selectedLane;
+    const selectedPair = round.optionsByLane[lane];
+    if (!selectedPair) {
+      return;
+    }
+
+    round.resolved = true;
+    round.chosenLane = lane;
+    state.game.roundsCompleted += 1;
+    const isCorrect = selectedPair.term === round.target.term;
+
+    if (isCorrect) {
+      round.result = "correct";
+      state.game.score += 100;
+      state.game.correctTerms.push(round.target.term);
+      state.game.pulseAt = performance.now();
+      playBannerWinBleep();
+      renderCorrectTerms();
+      announce("Signal lock confirmed.");
+    } else {
+      round.result = "wrong";
+      state.game.score = Math.max(0, state.game.score - getPenaltyAmount(ROUND_CONFIG.wrongScorePenalty));
+      playClassicWrongTone();
+      addMissedReviewEntry(round.target, "Wrong signal lock");
+      if (registerMistake("wrong signal lock")) {
+        return;
+      }
+      reinsertTarget(round.target);
+      announce("Signal mismatch.");
+    }
+
+    state.game.currentTarget = null;
+    state.game.signalRound = null;
+    state.game.nextRoundAt = performance.now() + getSignalTransitionDelay();
+    setDefinitionText("Lock recorded. Loading next signal set...");
+    updateHud();
+    if (!state.game.remainingTargets.length) {
+      finishMission(true);
+    }
   }
 
   function buildDistractors(target, needed) {
@@ -1604,6 +1746,7 @@
     state.game.won = won;
     state.game.activeTerms = [];
     state.game.currentTarget = null;
+    state.game.signalRound = null;
     state.game.missionRound = null;
     state.game.missionSelectedIndex = -1;
     toggleGameButtons(false);
@@ -1746,6 +1889,10 @@
   function getRemainingPromptCount() {
     if (isMissionAccessibleMode()) {
       const pendingCurrent = state.game.missionRound && !state.game.missionRound.resolved ? 1 : 0;
+      return Math.max(0, state.game.remainingTargets.length + pendingCurrent);
+    }
+    if (state.game.mode === "signal_lock") {
+      const pendingCurrent = state.game.signalRound ? 1 : 0;
       return Math.max(0, state.game.remainingTargets.length + pendingCurrent);
     }
     const unresolvedActive = state.game.activeTerms.filter((term) => term.state !== "correct_flash").length;
@@ -2089,7 +2236,7 @@
     els.skipBtn.disabled = !isRunning;
     els.leftBtn.disabled = !isRunning || isMissionAccessibleMode();
     els.rightBtn.disabled = !isRunning || isMissionAccessibleMode();
-    els.fireBtn.disabled = !isRunning || state.game.mode !== "classic";
+    els.fireBtn.disabled = !isRunning || (state.game.mode !== "classic" && state.game.mode !== "signal_lock");
     els.pauseBtn.textContent = "Pause";
     if (els.missionPauseBtn) {
       els.missionPauseBtn.textContent = "Pause";
@@ -2322,6 +2469,10 @@
       updateMissionAccessibleGame(now, deltaMs);
       return;
     }
+    if (state.game.mode === "signal_lock") {
+      updateSignalLockGame(now);
+      return;
+    }
     if (state.game.mode === "banner_drive") {
       updateBannerDriveGame(now, deltaMs);
       return;
@@ -2390,6 +2541,19 @@
     }
   }
 
+  function updateSignalLockGame(now) {
+    if (state.game.signalRound) {
+      return;
+    }
+    if (state.game.remainingTargets.length === 0) {
+      finishMission(true);
+      return;
+    }
+    if (now >= state.game.nextRoundAt) {
+      startNextSignalLockRound(now);
+    }
+  }
+
   function updateBannerDriveGame(now, deltaMs) {
     const deltaSeconds = Math.min(0.05, Math.max(0, deltaMs / 1000));
 
@@ -2443,12 +2607,18 @@
       drawLaneGuides();
       drawCity();
       drawCannon();
+    } else if (state.game.mode === "signal_lock") {
+      drawLaneHighlights();
+      drawLaneGuides();
+      drawSignalLockArena(now);
     } else {
       drawBannerRoadMarks();
     }
     if (state.game.mode === "classic") {
       drawTerms(now);
       drawBeam(now);
+    } else if (state.game.mode === "signal_lock") {
+      // Signal Lock drawing happens in drawSignalLockArena.
     } else {
       drawBannerSets(now);
       drawCar();
@@ -2501,6 +2671,64 @@
       ctx.lineTo(CANVAS_WIDTH, state.game.car.y - 6);
       ctx.stroke();
     }
+    ctx.restore();
+  }
+
+  function drawSignalLockArena(now) {
+    const round = state.game.signalRound;
+    const top = 110;
+    const width = 250;
+    const height = 150;
+    laneCenters.forEach((center, lane) => {
+      const x = center - width / 2;
+      const isSelected = lane === state.game.selectedLane;
+      const pulse = 0.5 + 0.5 * Math.sin(now / 360 + lane);
+      ctx.save();
+      ctx.fillStyle = isSelected
+        ? `rgba(23, 92, 130, ${0.58 + pulse * 0.16})`
+        : `rgba(18, 47, 73, ${0.62 + pulse * 0.1})`;
+      ctx.fillRect(x, top, width, height);
+      ctx.strokeStyle = isSelected ? "#86ffe1" : "#6ea7d3";
+      ctx.lineWidth = isSelected ? 3 : 2;
+      ctx.strokeRect(x, top, width, height);
+
+      const pair = round && round.optionsByLane ? round.optionsByLane[lane] : null;
+      if (pair) {
+        ctx.fillStyle = "#e8f5ff";
+        ctx.font = "bold 21px 'Trebuchet MS', 'Verdana', sans-serif";
+        ctx.textAlign = "center";
+        drawWrappedCenteredText(pair.term, center, top + 38, width - 24, 23, 4);
+      } else {
+        ctx.fillStyle = "#a7c4de";
+        ctx.font = "18px 'Trebuchet MS', 'Verdana', sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("Waiting...", center, top + 78);
+      }
+
+      ctx.fillStyle = isSelected ? "#f9e372" : "#cde9ff";
+      ctx.font = "bold 16px 'Lucida Console', 'Courier New', monospace";
+      ctx.fillText(`Signal ${lane + 1}`, center, top + height + 28);
+      ctx.restore();
+    });
+
+    ctx.save();
+    const ringX = CANVAS_WIDTH / 2;
+    const ringY = 470;
+    const ringPulse = 0.8 + 0.2 * Math.sin(now / 280);
+    ctx.strokeStyle = "rgba(110,219,255,0.55)";
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.arc(ringX, ringY, 92 * ringPulse, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(ringX, ringY, 52 * ringPulse, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.fillStyle = "#87a9c9";
+    ctx.fillRect(ringX - 26, ringY - 20, 52, 40);
+    ctx.strokeStyle = "#bedcff";
+    ctx.strokeRect(ringX - 26, ringY - 20, 52, 40);
     ctx.restore();
   }
 
@@ -2783,9 +3011,12 @@
     ctx.fillStyle = "rgba(0,0,0,0.62)";
     ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
     ctx.fillStyle = state.game.won ? "#7cffc8" : "#ff9ba8";
+    const lossHeadline = state.game.cityIntegrity <= 0 && state.game.mode === "classic"
+      ? "CITY OVERRUN"
+      : "MISSION FAILED";
     ctx.textAlign = "center";
     ctx.font = "bold 50px 'Lucida Console', 'Courier New', monospace";
-    ctx.fillText(state.game.won ? "MISSION COMPLETE" : "CITY OVERRUN", CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 - 16);
+    ctx.fillText(state.game.won ? "MISSION COMPLETE" : lossHeadline, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 - 16);
     ctx.fillStyle = "#f7fbff";
     ctx.font = "20px 'Trebuchet MS', 'Verdana', sans-serif";
     ctx.fillText(`Final score: ${state.game.score}`, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 24);
