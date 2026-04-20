@@ -1548,13 +1548,13 @@
 
   function getMemoryRevealDuration() {
     const speed = getSelectedMemoryDisplaySpeed();
+    let baseDurationMs = 6000;
     if (speed === "slow") {
-      return 8000;
+      baseDurationMs = 8000;
+    } else if (speed === "fast") {
+      baseDurationMs = 4500;
     }
-    if (speed === "fast") {
-      return 4500;
-    }
-    return 6000;
+    return Math.round(baseDurationMs * 1.3);
   }
 
   function getMemoryFeedbackDuration() {
@@ -2831,6 +2831,7 @@
     ctx.restore();
 
     const phase = round ? round.phase : "idle";
+    const revealFocusPulse = 0.5 + 0.5 * Math.sin(now / 220);
     const phaseLabel = phase === "reveal"
       ? "MEMORIZE"
       : phase === "recall"
@@ -2850,6 +2851,15 @@
     ctx.textAlign = "center";
     ctx.fillText(`MEMORY RELAY :: ${phaseLabel}`, CANVAS_WIDTH / 2, boardTop + 40);
     ctx.restore();
+
+    if (round && round.phase === "reveal") {
+      ctx.save();
+      ctx.fillStyle = `rgba(255, 240, 160, ${0.22 + revealFocusPulse * 0.22})`;
+      ctx.font = "bold 18px 'Trebuchet MS', 'Verdana', sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("Memorize the three cards below", CANVAS_WIDTH / 2, top - 24);
+      ctx.restore();
+    }
 
     laneCenters.forEach((center, lane) => {
       const x = center - width / 2;
@@ -2884,6 +2894,12 @@
       }
       ctx.strokeRect(x, top, width, height);
 
+      if (revealTerms) {
+        ctx.strokeStyle = `rgba(255, 239, 155, ${0.32 + revealFocusPulse * 0.4})`;
+        ctx.lineWidth = 4;
+        ctx.strokeRect(x - 6, top - 6, width + 12, height + 12);
+      }
+
       const hatchAlpha = shouldShowTerm ? 0.04 : 0.16;
       ctx.strokeStyle = `rgba(198, 226, 255, ${hatchAlpha})`;
       for (let y = top + 12; y < top + height - 8; y += 12) {
@@ -2912,6 +2928,13 @@
       ctx.font = "bold 15px 'Lucida Console', 'Courier New', monospace";
       if (phase === "reveal" || phase === "recall") {
         ctx.fillText(isSelected ? "Selected" : "", center, top + height + 30);
+      }
+
+      if (revealTerms) {
+        const cueY = top - 12 - revealFocusPulse * 5;
+        ctx.fillStyle = `rgba(255, 245, 182, ${0.5 + revealFocusPulse * 0.35})`;
+        ctx.font = "bold 18px 'Lucida Console', 'Courier New', monospace";
+        ctx.fillText("v", center, cueY);
       }
 
       if (revealFeedback && isChosenLane) {
