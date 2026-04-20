@@ -1,100 +1,132 @@
 ﻿// Study Arcade terms file template
 // Study Arcade, copyright Dr. Grant Benham
-// Keep the topic headers (# Topic) and term: definition format.
-// You can edit terms and definitions or replace this file with your own compatible content.
+// Keep # Topic headers and term: definition lines.
+// You can edit this file or load any compatible .txt from the game window.
 
-# World Geography
-Equator: The imaginary line at zero degrees latitude that circles Earth midway between the poles.
-Prime Meridian: The reference line at zero degrees longitude that passes through Greenwich, England.
-Latitude: The angular distance north or south of the equator measured in degrees.
-Longitude: The angular distance east or west of the Prime Meridian measured in degrees.
-Hemisphere: One half of Earth, such as the Northern, Southern, Eastern, or Western half.
-Continent: A large continuous landmass recognized as one of Earths major regions.
-Archipelago: A chain or group of islands located near one another.
-Peninsula: Land nearly surrounded by water but connected to a larger land area.
-Isthmus: A narrow strip of land connecting two larger land areas.
-Delta: A landform of deposited sediment at the mouth of a river.
-Fjord: A long, narrow sea inlet carved by glaciers and bordered by steep slopes.
-Plateau: An area of high, relatively flat land.
-Savanna: Grassland ecosystem with scattered trees and distinct wet and dry seasons.
-Tundra: Cold, treeless biome with short growing seasons and frozen subsoil.
-Taiga: Northern coniferous forest biome also called boreal forest.
-Monsoon: Seasonal wind pattern that often brings heavy rainfall.
-Rain Shadow: A dry region on the leeward side of a mountain range.
-Watershed: Land area that drains precipitation to a common river, lake, or ocean outlet.
-Tributary: A smaller stream or river that flows into a larger river.
-Estuary: A coastal zone where freshwater from rivers mixes with seawater.
-Strait: A narrow waterway connecting two larger bodies of water.
-Gulf: A large inlet of sea partly enclosed by land.
-Bay: A broad inlet of water where the land curves inward.
-Atoll: Ring-shaped coral island or reef surrounding a lagoon.
-Lagoon: A shallow body of water separated from a larger body by a barrier.
-Glacier: A persistent, moving mass of compacted ice formed from snow.
-Permafrost: Ground that remains frozen for at least two consecutive years.
-Oasis: A fertile area in a desert where water is naturally available.
-Desertification: The process by which fertile land becomes desert.
-Urbanization: The growth of cities as populations concentrate in urban areas.
+# Psychology
+Cognition: Mental processes involved in thinking, memory, language, and problem solving.
+Perception: The process of organizing and interpreting sensory information.
+Attention: The selective focus of mental resources on certain information.
+Working memory: A short-term system used to hold and manipulate information.
+Long-term memory: Relatively permanent storage of information over extended time.
+Classical conditioning: Learning through association between two stimuli.
+Operant conditioning: Learning in which behavior is shaped by consequences.
+Reinforcement: Any consequence that increases the likelihood of a behavior.
+Punishment: Any consequence that decreases the likelihood of a behavior.
+Extinction: The weakening of a learned response when reinforcement stops.
+Generalization: Responding similarly to stimuli that resemble the original cue.
+Discrimination: Learning to respond differently to distinct stimuli.
+Observational learning: Learning by watching and imitating others.
+Cognitive bias: A systematic pattern of deviation from rational judgment.
+Confirmation bias: Tendency to seek or interpret information that supports existing beliefs.
+Motivation: Internal and external forces that initiate and direct behavior.
+Intrinsic motivation: Doing an activity for its inherent interest or satisfaction.
+Extrinsic motivation: Doing an activity to obtain external rewards or avoid penalties.
+Emotion: A complex psychological state involving feelings, thoughts, and physiology.
+Stress: A response to demands or threats that challenge coping resources.
+Resilience: Capacity to adapt and recover from adversity.
+Personality: Enduring patterns of thinking, feeling, and behaving.
+Trait: A stable characteristic that influences behavior across situations.
+Temperament: Biologically based tendencies in emotional and behavioral style.
+Attachment: Emotional bond between people, especially between infant and caregiver.
+Self-efficacy: Belief in ones ability to succeed at specific tasks.
+Mindfulness: Nonjudgmental awareness of present-moment experience.
+Neuroplasticity: The brains ability to reorganize structure and function.
+Executive function: Higher-order control processes such as planning and inhibition.
+Metacognition: Awareness and regulation of ones own thinking processes.
 
-# Basic Astronomy
-Astronomy: The scientific study of objects and phenomena beyond Earths atmosphere.
-Solar System: The Sun and all objects bound to it by gravity.
-Star: A luminous sphere of plasma powered by nuclear fusion.
-Planet: A large body that orbits a star and has cleared its orbital neighborhood.
-Dwarf Planet: A body that orbits the Sun and is nearly round but has not cleared its orbit.
-Asteroid: A small rocky object orbiting the Sun.
-Comet: An icy body that develops a glowing coma and tail when near the Sun.
-Meteoroid: A small rocky or metallic body traveling through space.
-Meteor: The streak of light seen when a meteoroid burns in Earths atmosphere.
-Meteorite: A meteoroid fragment that survives the atmosphere and reaches the ground.
-Orbit: The curved path of one object around another due to gravity.
-Rotation: The spinning of an object around its own axis.
-Revolution: The motion of one body around another body.
-Axis: An imaginary line around which a body rotates.
-Ellipse: An oval-shaped orbit with two focal points.
-Light Year: The distance light travels in one year in a vacuum.
-Astronomical Unit: The average distance between Earth and the Sun.
-Galaxy: A massive system of stars, gas, dust, and dark matter bound by gravity.
-Milky Way: The galaxy that contains Earth and our solar system.
-Nebula: A cloud of gas and dust in space.
-Supernova: A powerful stellar explosion near the end of a stars life cycle.
-Black Hole: A region of space where gravity is so strong that light cannot escape.
-Red Giant: A large, cool, luminous star in a late stage of stellar evolution.
-White Dwarf: A small, dense stellar remnant left after a low-mass star sheds outer layers.
-Neutron Star: An extremely dense stellar remnant composed mostly of neutrons.
-Eclipse: An event where one celestial body moves into the shadow of another.
-Solstice: The time when the Suns path reaches its northernmost or southernmost point.
-Equinox: The time when day and night are nearly equal in length worldwide.
-Constellation: A recognized pattern of stars forming a named region of the sky.
-Exoplanet: A planet that orbits a star outside our solar system.
+# Food
+Cuisine: A style of cooking associated with a culture or region.
+Ingredient: Any food item used to prepare a dish.
+Recipe: A set of instructions for preparing a food dish.
+Boil: To cook food in liquid at its boiling point.
+Simmer: To cook gently in liquid just below boiling.
+Saute: To cook quickly in a small amount of fat over relatively high heat.
+Roast: To cook food with dry heat in an oven.
+Bake: To cook by surrounding food with dry heat, usually in an oven.
+Grill: To cook over direct radiant heat on a grate.
+Steam: To cook using vapor from boiling water.
+Blanch: To briefly cook food in boiling water, then cool rapidly.
+Fermentation: Transformation of food by microorganisms such as yeast or bacteria.
+Marinate: To soak food in a seasoned liquid before cooking.
+Seasoning: Ingredients added to enhance flavor, such as salt, herbs, or spices.
+Umami: Savory taste associated with glutamates and certain proteins.
+Acidity: Sourness in food that brightens flavor and balances richness.
+Texture: Physical feel of food, such as crisp, tender, or creamy.
+Aroma: Smell of food that contributes strongly to flavor perception.
+Nutrient: A substance in food needed for growth, health, and energy.
+Protein: Macronutrient made of amino acids used for structure and function.
+Carbohydrate: Macronutrient that provides a primary source of energy.
+Fat: Macronutrient important for energy storage, cell function, and absorption.
+Fiber: Indigestible plant material that supports digestive health.
+Vitamin: Organic compound needed in small amounts for normal metabolism.
+Mineral: Inorganic nutrient required for body structure and function.
+Calorie: Unit of energy used to describe food energy content.
+Portion: The amount of food served or consumed at one time.
+Food safety: Practices that prevent foodborne illness and contamination.
+Cross-contamination: Transfer of harmful microorganisms between foods or surfaces.
+Shelf life: Length of time a food remains safe and acceptable to eat.
 
-# Foundations of Biology
+# Travel
+Passport: Official government document used for international travel and identity.
+Visa: Authorization allowing entry, stay, or transit in another country.
+Itinerary: Planned route and schedule for a trip.
+Layover: A stop between connecting flights before the final destination.
+Jet lag: Temporary sleep disruption caused by crossing time zones.
+Exchange rate: Value of one currency compared with another currency.
+Customs: Border process for declaring goods entering a country.
+Immigration: Border control process that verifies entry eligibility.
+Timezone: A region that uses a uniform standard time.
+UTC: Coordinated Universal Time, the global reference standard for time.
+World heritage site: Place recognized for outstanding cultural or natural value.
+Capital city: The city where a countrys central government is based.
+Currency: The official system of money used in a country.
+Vatican City: The smallest sovereign country in the world by area and population.
+Tokyo: The capital city of Japan.
+Ottawa: The capital city of Canada.
+Canberra: The capital city of Australia.
+Brasilia: The capital city of Brazil.
+New Delhi: The capital city of India.
+Cairo: The capital city of Egypt.
+Yen: The official currency of Japan.
+Euro: Shared currency used by many European Union member states.
+Pound sterling: The official currency of the United Kingdom.
+Canadian dollar: The official currency of Canada.
+Australian dollar: The official currency of Australia.
+Brazilian real: The official currency of Brazil.
+Indian rupee: The official currency of India.
+Egyptian pound: The official currency of Egypt.
+Swiss franc: The official currency of Switzerland and Liechtenstein.
+South African rand: The official currency of South Africa.
+
+# Biology
 Cell: The basic structural and functional unit of life.
-Nucleus: The membrane-bound organelle that contains DNA in eukaryotic cells.
-Mitochondrion: The organelle that produces most cellular ATP through respiration.
-Ribosome: The cellular structure that assembles proteins from amino acids.
-Cell Membrane: The selectively permeable boundary surrounding a cell.
-Cytoplasm: The gel-like contents inside a cell excluding the nucleus.
-DNA: The molecule that stores hereditary genetic information.
-Gene: A segment of DNA that contributes to a functional product.
-Chromosome: A DNA-protein structure carrying many genes.
-Allele: A variant form of a gene at a specific locus.
-Protein: A polymer of amino acids that performs structural and functional roles.
-Enzyme: A biological catalyst that speeds up chemical reactions.
-Photosynthesis: The process by which plants convert light energy into chemical energy.
-Cellular Respiration: The process of extracting energy from molecules to produce ATP.
-Homeostasis: The maintenance of stable internal conditions in an organism.
-Tissue: A group of similar cells working together for a specific function.
-Organ: A structure composed of multiple tissues performing specialized functions.
-Organ System: A group of organs that work together to support life processes.
-Neuron: A specialized cell that transmits electrical and chemical signals.
-Hormone: A signaling molecule released to regulate distant target cells.
-Immune System: The network of cells and organs that defends against pathogens.
-Antibody: A protein produced by B cells that binds specific antigens.
-Pathogen: A microorganism or agent that causes disease.
-Evolution: The change in inherited traits of populations across generations.
-Natural Selection: Differential survival and reproduction based on heritable traits.
-Adaptation: A heritable trait that improves survival or reproduction in a given environment.
-Ecosystem: A community of organisms interacting with their physical environment.
-Producer: An organism that makes its own food, usually through photosynthesis.
-Consumer: An organism that obtains energy by eating other organisms.
-Decomposer: An organism that breaks down dead material and recycles nutrients.
+Nucleus: Membrane-bound organelle that stores DNA in eukaryotic cells.
+Mitochondrion: Organelle that generates most ATP through cellular respiration.
+Ribosome: Cellular structure where proteins are assembled.
+Cell membrane: Selectively permeable boundary that surrounds the cell.
+Cytoplasm: Gel-like interior of a cell outside the nucleus.
+DNA: Molecule that stores hereditary information.
+Gene: Segment of DNA associated with a functional product.
+Chromosome: DNA-protein structure carrying many genes.
+Allele: Alternative form of a gene at a specific locus.
+Protein: Polymer of amino acids with structural and functional roles.
+Enzyme: Biological catalyst that speeds chemical reactions.
+Photosynthesis: Process that converts light energy into chemical energy.
+Cellular respiration: Process by which cells produce ATP from nutrients.
+Homeostasis: Maintenance of stable internal conditions.
+Tissue: Group of similar cells performing a common function.
+Organ: Structure made of multiple tissues with specialized functions.
+Organ system: Group of organs working together for major body functions.
+Neuron: Cell specialized for rapid electrical and chemical signaling.
+Hormone: Chemical messenger released to regulate target cells.
+Immune system: Network that protects the body from pathogens.
+Antibody: Immune protein that binds specific antigens.
+Pathogen: Disease-causing biological agent.
+Evolution: Change in inherited traits across generations.
+Natural selection: Differential survival and reproduction based on heritable variation.
+Adaptation: Heritable trait that increases fitness in an environment.
+Ecosystem: Community of organisms interacting with the physical environment.
+Producer: Organism that makes its own food, often via photosynthesis.
+Consumer: Organism that obtains energy by eating other organisms.
+Decomposer: Organism that breaks down dead matter and recycles nutrients.

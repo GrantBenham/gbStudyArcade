@@ -12,7 +12,7 @@
   const SETTINGS_KEY = "studyArcadeSettings";
   const SCOREBOARD_KEY = "studyArcadeScoreboard";
   const DEFAULT_FALL_SPEED = "normal";
-  const DEFAULT_GAME_MODE = "classic";
+  const DEFAULT_GAME_MODE = "mission_accessible";
   const DEFAULT_MEMORY_DISPLAY_SPEED = "standard";
   const DEFAULT_MISSION_PACE = "untimed";
   const DEFAULT_MISSION_TIME_LIMIT_SECONDS = 30;
@@ -710,7 +710,7 @@
       const validSpeeds = new Set(["slow", "standard", "fast"]);
       els.memoryDisplaySpeed.value = validSpeeds.has(persistedMemoryDisplay) ? persistedMemoryDisplay : DEFAULT_MEMORY_DISPLAY_SPEED;
     }
-    els.gameMode.value = state.settings.gameMode || DEFAULT_GAME_MODE;
+    els.gameMode.value = DEFAULT_GAME_MODE;
     els.fallSpeed.value = state.settings.fallSpeed || DEFAULT_FALL_SPEED;
     if (els.missionPace) {
       els.missionPace.value = state.settings.missionPace || DEFAULT_MISSION_PACE;
