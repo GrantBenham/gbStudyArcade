@@ -13,6 +13,7 @@
   const SCOREBOARD_KEY = "studyArcadeScoreboard";
   const DEFAULT_FALL_SPEED = "normal";
   const DEFAULT_GAME_MODE = "classic";
+  const DEFAULT_MEMORY_DISPLAY_SPEED = "standard";
   const DEFAULT_MISSION_PACE = "untimed";
   const DEFAULT_MISSION_TIME_LIMIT_SECONDS = 30;
   const DEFAULT_CLASSIC_START_LANE = Math.floor(LANE_COUNT / 2);
@@ -54,9 +55,12 @@
     gameMode: document.getElementById("game-mode"),
     fallSpeed: document.getElementById("fall-speed"),
     speedField: document.getElementById("speed-field"),
+    memoryDisplayField: document.getElementById("memory-display-field"),
+    memoryDisplaySpeed: document.getElementById("memory-display-speed"),
     mistakeLimitField: document.getElementById("mistake-limit-field"),
     wrongAnswerLimit: document.getElementById("wrong-answer-limit"),
     soundLevelField: document.getElementById("sound-level-field"),
+    visualAccessRow: document.getElementById("visual-access-row"),
     missionSettings: document.getElementById("mission-settings"),
     missionPace: document.getElementById("mission-pace"),
     missionTimeLimit: document.getElementById("mission-time-limit"),
@@ -302,7 +306,7 @@
       event.target.value = "";
     });
 
-    [els.gameMode, els.fallSpeed, els.wrongAnswerLimit, els.soundLevel, els.missionPace, els.missionTimeLimit, els.missionConfirm, els.missionHints, els.reduceMotion].forEach((control) => {
+    [els.gameMode, els.fallSpeed, els.memoryDisplaySpeed, els.wrongAnswerLimit, els.soundLevel, els.missionPace, els.missionTimeLimit, els.missionConfirm, els.missionHints, els.reduceMotion].forEach((control) => {
       if (!control) {
         return;
       }
@@ -351,6 +355,24 @@
       }
       persistSettings();
     });
+
+    if (els.memoryDisplaySpeed) {
+      els.memoryDisplaySpeed.addEventListener("change", () => {
+        const activeMission = state.game.running && !state.game.gameOver;
+        if (activeMission) {
+          pauseForSettingsEdit();
+          if (state.game.mode === "memory_relay") {
+            const resetNow = resetWaveForMidMissionSettingsChange();
+            announce(resetNow
+              ? "Game paused. Memory card display time updated and current set reset."
+              : "Game paused. Memory card display time updated.");
+          } else {
+            announce("Game paused. Memory card display setting updated.");
+          }
+        }
+        persistSettings();
+      });
+    }
 
     if (els.wrongAnswerLimit) {
       els.wrongAnswerLimit.addEventListener("change", () => {
@@ -682,6 +704,11 @@
       const soundLevel = getPersistedSoundLevel(state.settings);
       els.soundLevel.value = soundLevel;
     }
+    if (els.memoryDisplaySpeed) {
+      const persistedMemoryDisplay = String(state.settings.memoryDisplaySpeed || DEFAULT_MEMORY_DISPLAY_SPEED).toLowerCase();
+      const validSpeeds = new Set(["slow", "standard", "fast"]);
+      els.memoryDisplaySpeed.value = validSpeeds.has(persistedMemoryDisplay) ? persistedMemoryDisplay : DEFAULT_MEMORY_DISPLAY_SPEED;
+    }
     els.gameMode.value = state.settings.gameMode || DEFAULT_GAME_MODE;
     els.fallSpeed.value = state.settings.fallSpeed || DEFAULT_FALL_SPEED;
     if (els.missionPace) {
@@ -705,6 +732,25 @@
     updateModeUI(els.gameMode.value);
   }
 
+  function shouldShowPrimaryDefinitionBox(modeOverride) {
+    const activeMode = modeOverride || state.game.mode;
+    if (isMissionAccessibleMode(activeMode)) {
+      return false;
+    }
+    if (activeMode !== "memory_relay") {
+      return true;
+    }
+    const round = state.game.memoryRound;
+    return !!(round && (round.phase === "recall" || round.phase === "feedback"));
+  }
+
+  function syncPrimaryDefinitionVisibility(modeOverride) {
+    if (!els.definitionBox) {
+      return;
+    }
+    els.definitionBox.classList.toggle("hidden", !shouldShowPrimaryDefinitionBox(modeOverride));
+  }
+
   function updateModeUI(mode) {
     const selectedMode = mode || DEFAULT_GAME_MODE;
     const isClassic = selectedMode === "classic";
@@ -717,14 +763,18 @@
     }
     els.laneControlsSection.classList.toggle("hidden", isMission);
     els.canvas.parentElement.classList.toggle("hidden", isMission);
-    if (els.definitionBox) {
-      els.definitionBox.classList.toggle("hidden", isMission);
-    }
+    syncPrimaryDefinitionVisibility(selectedMode);
     if (els.missionDefinitionBox) {
       els.missionDefinitionBox.classList.toggle("hidden", !isMission);
     }
     if (els.speedField) {
       els.speedField.classList.toggle("hidden", isMission || isMemoryRelay);
+    }
+    if (els.memoryDisplayField) {
+      els.memoryDisplayField.classList.toggle("hidden", !isMemoryRelay);
+    }
+    if (els.visualAccessRow) {
+      els.visualAccessRow.classList.toggle("hidden", isMemoryRelay);
     }
     if (els.mistakeLimitField) {
       els.mistakeLimitField.classList.toggle("hidden", isMission);
@@ -1184,11 +1234,13 @@
       return;
     }
     if (state.game.mode === "memory_relay") {
-      if (state.game.memoryRound && state.game.memoryRound.target) {
+      if (state.game.memoryRound && state.game.memoryRound.target
+        && (state.game.memoryRound.phase === "recall" || state.game.memoryRound.phase === "feedback")) {
         setDefinitionText(state.game.memoryRound.target.definition);
       } else {
-        setDefinitionText("Loading next memory set...");
+        setDefinitionText("");
       }
+      syncPrimaryDefinitionVisibility();
       return;
     }
     if (state.game.mode === "banner_drive") {
@@ -1251,6 +1303,7 @@
       state.game.currentTarget = null;
       state.game.nextRoundAt = performance.now();
       setDefinitionText("Settings updated. New memory set will load when you resume.");
+      syncPrimaryDefinitionVisibility();
       updateHud();
       return true;
     }
@@ -1330,6 +1383,7 @@
       state.game.currentTarget = null;
       state.game.nextRoundAt = performance.now() + 120;
       setDefinitionText("Memory set skipped. Loading next set...");
+      syncPrimaryDefinitionVisibility();
       updateHud();
       announce("Current memory set skipped.");
       return;
@@ -1482,16 +1536,40 @@
     setDefinitionText(state.game.currentTarget.definition);
   }
 
+  function getSelectedMemoryDisplaySpeed() {
+    if (!els.memoryDisplaySpeed) {
+      return DEFAULT_MEMORY_DISPLAY_SPEED;
+    }
+    const selected = String(els.memoryDisplaySpeed.value || DEFAULT_MEMORY_DISPLAY_SPEED).toLowerCase();
+    return selected === "slow" || selected === "fast" || selected === "standard"
+      ? selected
+      : DEFAULT_MEMORY_DISPLAY_SPEED;
+  }
+
   function getMemoryRevealDuration() {
-    return els.reduceMotion.checked ? 6000 : 4500;
+    const speed = getSelectedMemoryDisplaySpeed();
+    if (speed === "slow") {
+      return 8000;
+    }
+    if (speed === "fast") {
+      return 4500;
+    }
+    return 6000;
   }
 
   function getMemoryFeedbackDuration() {
-    return els.reduceMotion.checked ? 280 : 760;
+    const speed = getSelectedMemoryDisplaySpeed();
+    if (speed === "slow") {
+      return 2600;
+    }
+    if (speed === "fast") {
+      return 2000;
+    }
+    return 2300;
   }
 
   function getMemoryTransitionDelay() {
-    return els.reduceMotion.checked ? 100 : 220;
+    return 220;
   }
 
   function startNextMemoryRelayRound(now) {
@@ -1525,7 +1603,8 @@
       result: "pending"
     };
     state.game.currentTarget = target;
-    setDefinitionText("Memorize all three terms and where each appears.");
+    setDefinitionText("");
+    syncPrimaryDefinitionVisibility();
     updateHud();
     announce("Memory Relay set shown. Memorize positions now.");
   }
@@ -1562,7 +1641,6 @@
       state.game.pulseAt = performance.now();
       playBannerWinBleep();
       renderCorrectTerms();
-      setDefinitionText("Correct memory match. Loading next set...");
       announce("Correct memory match.");
     } else {
       round.result = "wrong";
@@ -1573,10 +1651,10 @@
         return;
       }
       reinsertTarget(round.target);
-      setDefinitionText("Incorrect memory match. Prompt recycled.");
       announce("Incorrect memory match.");
     }
     state.game.currentTarget = null;
+    syncPrimaryDefinitionVisibility();
     updateHud();
   }
 
@@ -1858,31 +1936,23 @@
   }
 
   function renderMissedReview() {
-    if (!els.missedReviewList || !els.missedReviewNote) {
+    if (!els.missedReviewList) {
       return;
     }
     els.missedReviewList.innerHTML = "";
+    if (els.missedReviewNote) {
+      els.missedReviewNote.textContent = "";
+    }
     const reviewEntries = Object.values(state.game.missedReviewByKey || {})
       .sort((a, b) => b.count - a.count || a.term.localeCompare(b.term));
 
     if (!reviewEntries.length) {
-      if (state.game.running) {
-        els.missedReviewNote.textContent = "Live mission misses appear here.";
-      } else if (state.game.gameOver) {
-        els.missedReviewNote.textContent = "No missed terms in this mission.";
-      } else {
-        els.missedReviewNote.textContent = "Start a mission to populate this list.";
-      }
       const li = document.createElement("li");
       li.className = "scores-empty";
       li.textContent = "No missed terms yet.";
       els.missedReviewList.appendChild(li);
       return;
     }
-
-    els.missedReviewNote.textContent = state.game.running
-      ? "Live mission misses (updates during play):"
-      : "Missed terms from this mission:";
     reviewEntries.forEach((entry) => {
       const li = document.createElement("li");
       const countSuffix = entry.count === 1 ? "1 miss" : `${entry.count} misses`;
@@ -2572,6 +2642,7 @@
       round.phase = "recall";
       round.phaseEndsAt = Number.POSITIVE_INFINITY;
       setDefinitionText(round.target.definition);
+      syncPrimaryDefinitionVisibility();
       announce("Definition shown. Choose the remembered position.");
       return;
     }
@@ -2579,6 +2650,7 @@
     if (round.phase === "feedback" && now >= round.phaseEndsAt) {
       state.game.memoryRound = null;
       state.game.nextRoundAt = now + getMemoryTransitionDelay();
+      syncPrimaryDefinitionVisibility();
       if (!state.game.remainingTargets.length) {
         finishMission(true);
       }
@@ -2793,6 +2865,13 @@
       ctx.save();
       ctx.fillStyle = isSelected ? "#1a4d74" : "#14354f";
       ctx.fillRect(x, top, width, height);
+      if (revealFeedback && isCorrectLane) {
+        ctx.fillStyle = "rgba(78, 196, 123, 0.35)";
+        ctx.fillRect(x, top, width, height);
+      } else if (revealFeedback && isChosenLane) {
+        ctx.fillStyle = "rgba(221, 82, 102, 0.32)";
+        ctx.fillRect(x, top, width, height);
+      }
       if (isCorrectLane) {
         ctx.strokeStyle = "#8effba";
         ctx.lineWidth = 4;
@@ -2830,8 +2909,10 @@
       }
 
       ctx.fillStyle = isSelected ? "#ffe995" : "#cde9ff";
-      ctx.font = "bold 16px 'Lucida Console', 'Courier New', monospace";
-      ctx.fillText(`Lane ${lane + 1}`, center, top + height + 30);
+      ctx.font = "bold 15px 'Lucida Console', 'Courier New', monospace";
+      if (phase === "reveal" || phase === "recall") {
+        ctx.fillText(isSelected ? "Selected" : "", center, top + height + 30);
+      }
 
       if (revealFeedback && isChosenLane) {
         ctx.fillStyle = round.result === "correct" ? "#9cf7b4" : "#ffb8c2";
@@ -2840,7 +2921,7 @@
       } else if (revealFeedback && isCorrectLane) {
         ctx.fillStyle = "#9cf7b4";
         ctx.font = "bold 14px 'Trebuchet MS', 'Verdana', sans-serif";
-        ctx.fillText("Correct lane", center, top + height + 50);
+        ctx.fillText("Correct answer", center, top + height + 50);
       }
 
       ctx.restore();
@@ -3262,6 +3343,7 @@
     const settings = {
       gameMode: els.gameMode.value || DEFAULT_GAME_MODE,
       fallSpeed: els.fallSpeed.value || DEFAULT_FALL_SPEED,
+      memoryDisplaySpeed: getSelectedMemoryDisplaySpeed(),
       missionPace: els.missionPace ? els.missionPace.value : DEFAULT_MISSION_PACE,
       missionTimeLimitSeconds: Number(els.missionTimeLimit && els.missionTimeLimit.value) || DEFAULT_MISSION_TIME_LIMIT_SECONDS,
       missionConfirm: !!(els.missionConfirm && els.missionConfirm.checked),
