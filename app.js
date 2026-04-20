@@ -60,13 +60,11 @@
     mistakeLimitField: document.getElementById("mistake-limit-field"),
     wrongAnswerLimit: document.getElementById("wrong-answer-limit"),
     soundLevelField: document.getElementById("sound-level-field"),
-    visualAccessRow: document.getElementById("visual-access-row"),
     missionSettings: document.getElementById("mission-settings"),
     missionPace: document.getElementById("mission-pace"),
     missionTimeLimit: document.getElementById("mission-time-limit"),
     missionConfirm: document.getElementById("mission-confirm"),
     missionHints: document.getElementById("mission-hints"),
-    reduceMotion: document.getElementById("reduce-motion"),
     soundLevel: document.getElementById("sound-level"),
     startBtn: document.getElementById("start-btn"),
     pauseBtn: document.getElementById("pause-btn"),
@@ -307,7 +305,7 @@
       event.target.value = "";
     });
 
-    [els.gameMode, els.fallSpeed, els.memoryDisplaySpeed, els.wrongAnswerLimit, els.soundLevel, els.missionPace, els.missionTimeLimit, els.missionConfirm, els.missionHints, els.reduceMotion].forEach((control) => {
+    [els.gameMode, els.fallSpeed, els.memoryDisplaySpeed, els.wrongAnswerLimit, els.soundLevel, els.missionPace, els.missionTimeLimit, els.missionConfirm, els.missionHints].forEach((control) => {
       if (!control) {
         return;
       }
@@ -326,7 +324,7 @@
           setModeChangeRestartRequired(true);
           // Keep current mission HUD/help aligned to the active mode while restart is required.
           updateModeUI(state.game.mode);
-          announce("Game paused. Game mode change requires starting a new mission. Press Start Mission to restart, or switch back to the current mode to unlock Resume.");
+          announce("Game paused. Game mode change requires starting a new game. Press Start Game to restart, or switch back to the current mode to unlock Resume.");
           return;
         }
 
@@ -410,15 +408,6 @@
 
     els.initials.addEventListener("blur", () => {
       els.initials.value = sanitizeInitials(els.initials.value);
-      persistSettings();
-    });
-
-    els.reduceMotion.addEventListener("change", () => {
-      const activeMission = state.game.running && !state.game.gameOver;
-      if (activeMission) {
-        pauseForSettingsEdit();
-        announce("Game paused. Reduced Motion setting updated.");
-      }
       persistSettings();
     });
 
@@ -694,8 +683,6 @@
   }
 
   function initializeSettingsUI() {
-    const reduceBySystem = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    els.reduceMotion.checked = state.settings.reduceMotion ?? reduceBySystem;
     if (els.wrongAnswerLimit) {
       const persistedLimit = String(state.settings.wrongAnswerLimit || DEFAULT_WRONG_ANSWER_LIMIT);
       const validLimits = new Set(["off", "5", "10", "20"]);
@@ -753,7 +740,7 @@
   }
 
   function updateModeUI(mode) {
-    const selectedMode = mode || DEFAULT_GAME_MODE;
+    const selectedMode = mode || (els.gameMode && els.gameMode.value) || DEFAULT_GAME_MODE;
     const isClassic = selectedMode === "classic";
     const isMemoryRelay = selectedMode === "memory_relay";
     const isMission = isMissionAccessibleMode(selectedMode);
@@ -773,9 +760,6 @@
     }
     if (els.memoryDisplayField) {
       els.memoryDisplayField.classList.toggle("hidden", !isMemoryRelay);
-    }
-    if (els.visualAccessRow) {
-      els.visualAccessRow.classList.toggle("hidden", isMemoryRelay);
     }
     if (els.mistakeLimitField) {
       els.mistakeLimitField.classList.toggle("hidden", isMission);
@@ -817,7 +801,7 @@
       els.helpText.innerHTML = "Mission Accessible: choose with <kbd>1</kbd>, <kbd>2</kbd>, or <kbd>3</kbd>. With Confirm enabled, submit by <kbd>Enter</kbd>/<kbd>Space</kbd>; otherwise selection submits immediately. Use arena buttons (or <kbd>P</kbd>/<kbd>K</kbd>) for pause and skip.";
     }
     syncEngineSound();
-    renderMissionAccessibleArena();
+    renderMissionAccessibleArena(selectedMode);
   }
 
   async function attemptAutoLoadBundledTerms() {
@@ -837,16 +821,16 @@
       });
       if (!loaded) {
         if (!Object.keys(state.topicsMap).length) {
-          setDefinitionText("Load a terms .txt file, then press Start Mission.");
+          setDefinitionText("Load a terms .txt file, then press Start Game.");
           setTermsSourceIndicator("none");
         }
         return;
       }
-      setDefinitionText("Default terms loaded. Select topics and press Start Mission.");
+      setDefinitionText("Default terms loaded. Select topics and press Start Game.");
       announce("Default terms loaded automatically. Use Load Terms .txt to switch files.");
     } catch {
       if (!Object.keys(state.topicsMap).length) {
-        setDefinitionText("Load a terms .txt file, then press Start Mission.");
+        setDefinitionText("Load a terms .txt file, then press Start Game.");
         setTermsSourceIndicator("none");
       }
     }
@@ -905,7 +889,7 @@
     if (!loaded) {
       return;
     }
-    setDefinitionText("Custom terms loaded. Select topics and press Start Mission.");
+    setDefinitionText("Custom terms loaded. Select topics and press Start Game.");
   }
 
   function setTermsSourceIndicator(sourceType, label) {
@@ -1153,7 +1137,7 @@
 
   function startMission() {
     if (!Object.keys(state.topicsMap).length) {
-      announce("Load a terms .txt file before starting a mission.", true);
+      announce("Load a terms .txt file before starting a game.", true);
       return;
     }
     const pairs = buildSelectedPairs();
@@ -1274,7 +1258,7 @@
       state.game.paused = true;
       els.pauseBtn.disabled = true;
       els.pauseBtn.textContent = "Restart Required";
-      setDefinitionText("Mode change selected. Start Mission to switch modes, or switch back to continue this mission.");
+      setDefinitionText("Mode change selected. Start Game to switch modes, or switch back to continue this game.");
       syncEngineSound();
       renderMissionAccessibleArena();
       return;
@@ -1388,7 +1372,7 @@
       return;
     }
     if (state.game.modeChangeRestartRequired) {
-      announce("Resume is locked because game mode changed. Press Start Mission to switch modes, or switch back to the current mode to resume.");
+      announce("Resume is locked because game mode changed. Press Start Game to switch modes, or switch back to the current mode to resume.");
       return;
     }
     state.game.paused = !state.game.paused;
@@ -1530,8 +1514,7 @@
     const unresolvedTerms = state.game.activeTerms.filter((term) => term.state !== "correct_flash");
     state.game.activeTerms = [];
     state.game.currentTarget = null;
-    const delay = els.reduceMotion.checked ? 80 : ROUND_CONFIG.roundSettleMs;
-    state.game.nextRoundAt = performance.now() + delay;
+    state.game.nextRoundAt = performance.now() + ROUND_CONFIG.roundSettleMs;
     if (reason !== "correct") {
       // Keep unanswered definitions in the pool for later waves.
       unresolvedTerms.forEach((term) => reinsertTarget(term.pair));
@@ -2179,7 +2162,7 @@
     state.game.missionRound = null;
     state.game.missionSelectedIndex = -1;
     state.game.missionAwaitingConfirm = false;
-    state.game.nextRoundAt = performance.now() + (els.reduceMotion.checked ? 80 : 320);
+    state.game.nextRoundAt = performance.now() + 320;
     updateHud();
     renderMissionAccessibleArena();
     checkForMissionAccessibleCompletion();
@@ -2250,11 +2233,21 @@
     announce(`Mission Accessible prompt loaded. ${target.definition}`);
   }
 
-  function renderMissionAccessibleArena() {
+  function getDisplayedMode(modeOverride) {
+    if (modeOverride) {
+      return modeOverride;
+    }
+    if (!state.game.running) {
+      return (els.gameMode && els.gameMode.value) || state.game.mode || DEFAULT_GAME_MODE;
+    }
+    return state.game.mode || DEFAULT_GAME_MODE;
+  }
+
+  function renderMissionAccessibleArena(modeOverride) {
     if (!els.missionArena || !els.missionStatus || !els.missionChoiceList) {
       return;
     }
-    const isMission = isMissionAccessibleMode();
+    const isMission = isMissionAccessibleMode(getDisplayedMode(modeOverride));
     els.missionArena.classList.toggle("hidden", !isMission);
     if (els.missionDefinitionBox) {
       els.missionDefinitionBox.classList.toggle("hidden", !isMission);
@@ -2271,7 +2264,7 @@
     els.missionSettingsAccessBtn.setAttribute("aria-pressed", state.game.missionFocusLocked ? "false" : "true");
 
     if (!state.game.running) {
-      els.missionStatus.textContent = "Start Mission to begin the fully accessible mode.";
+      els.missionStatus.textContent = "Start Game to begin the fully accessible mode.";
       els.missionRoundText.textContent = "-";
       els.missionStreakText.textContent = "0";
       els.missionTimerText.textContent = "Untimed";
@@ -2284,7 +2277,7 @@
       return;
     }
     if (state.game.gameOver) {
-      els.missionStatus.textContent = "Mission ended. Press Start Mission to play again.";
+      els.missionStatus.textContent = "Game ended. Press Start Game to play again.";
       els.missionRoundText.textContent = `${Math.min(state.game.missionAnswered, state.game.allPairs.length)} of ${state.game.allPairs.length}`;
       els.missionStreakText.textContent = String(state.game.missionBestStreak);
       els.missionTimerText.textContent = "Done";
@@ -2297,7 +2290,7 @@
       return;
     }
     if (state.game.modeChangeRestartRequired) {
-      els.missionStatus.textContent = "Mode changed. Press Start Mission to switch modes, or switch back to continue.";
+      els.missionStatus.textContent = "Mode changed. Press Start Game to switch modes, or switch back to continue.";
       els.missionSettingsAccessBtn.disabled = true;
       els.missionHintBtn.disabled = true;
       els.missionSubmitBtn.disabled = true;
@@ -3239,10 +3232,6 @@
   }
 
   function createBeam(lane, success) {
-    if (els.reduceMotion.checked) {
-      state.game.beam = null;
-      return;
-    }
     const now = performance.now();
     state.game.beam = {
       lane,
@@ -3279,7 +3268,7 @@
 
   function drawTopOverlay(now) {
     ctx.save();
-    if (!els.reduceMotion.checked && state.game.pulseAt && now - state.game.pulseAt < 340) {
+    if (state.game.pulseAt && now - state.game.pulseAt < 340) {
       const alpha = 1 - (now - state.game.pulseAt) / 340;
       ctx.fillStyle = `rgba(0,255,145,${alpha * 0.3})`;
       ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
@@ -3297,7 +3286,7 @@
     ctx.fillText("PAUSED", CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 - 10);
     ctx.font = "20px 'Trebuchet MS', 'Verdana', sans-serif";
     if (state.game.modeChangeRestartRequired) {
-      ctx.fillText("Mode changed. Press Start Mission to switch modes.", CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 18);
+      ctx.fillText("Mode changed. Press Start Game to switch modes.", CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 18);
       ctx.fillText("Or switch back to current mode to unlock Resume.", CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 48);
     } else {
       ctx.fillText("Press P or Resume to continue", CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 28);
@@ -3319,7 +3308,7 @@
     ctx.fillStyle = "#f7fbff";
     ctx.font = "20px 'Trebuchet MS', 'Verdana', sans-serif";
     ctx.fillText(`Final score: ${state.game.score}`, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 24);
-    ctx.fillText("Press Start Mission to play again.", CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 56);
+    ctx.fillText("Press Start Game to play again.", CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 56);
     ctx.restore();
   }
 
@@ -3435,7 +3424,6 @@
       missionHints: !!(els.missionHints && els.missionHints.checked),
       wrongAnswerLimit: String(els.wrongAnswerLimit && els.wrongAnswerLimit.value ? els.wrongAnswerLimit.value : DEFAULT_WRONG_ANSWER_LIMIT),
       soundLevel: getSelectedSoundLevel(),
-      reduceMotion: !!els.reduceMotion.checked,
       initials: sanitizeInitials(els.initials.value)
     };
     state.settings = settings;

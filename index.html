@@ -50,9 +50,9 @@
             <label for="game-mode">Game Type</label>
             <select id="game-mode">
               <option value="mission_accessible" selected>Mission Accessible</option>
-              <option value="banner_drive">Drive</option>
-              <option value="classic">Invaders</option>
-              <option value="memory_relay">Memory</option>
+              <option value="banner_drive">Banner Drive</option>
+              <option value="classic">Term Invaders</option>
+              <option value="memory_relay">Memory Relay</option>
             </select>
           </div>
           <div id="speed-field" class="field-row">
@@ -90,12 +90,6 @@
               <option value="high">High</option>
             </select>
           </div>
-          <div id="visual-access-row" class="field-row">
-            <label class="inline-checkbox" for="reduce-motion">
-              <input id="reduce-motion" type="checkbox">
-              Reduced Motion
-            </label>
-          </div>
           <div id="mission-settings" class="mission-settings hidden" aria-labelledby="mission-settings-heading">
             <p id="mission-settings-heading" class="mission-settings-title">Mission Accessible Options</p>
             <div class="mission-settings-grid">
@@ -132,7 +126,7 @@
       </fieldset>
 
       <div class="button-row">
-        <button id="start-btn" type="button" class="primary-btn">Start Mission</button>
+        <button id="start-btn" type="button" class="primary-btn">Start Game</button>
         <button id="pause-btn" type="button" disabled>Pause</button>
         <button id="skip-btn" type="button" disabled>Skip Definition</button>
       </div>
@@ -153,12 +147,12 @@
 
       <div id="definition-box" class="definition-box" aria-live="polite" aria-atomic="true">
         <p class="definition-label">Current Definition</p>
-        <p id="definition-text">Start a mission to begin.</p>
+        <p id="definition-text">Start a game to begin.</p>
       </div>
 
       <section id="mission-accessible-arena" class="mission-arena hidden" aria-labelledby="mission-arena-heading">
         <h3 id="mission-arena-heading">Mission Accessible Arena</h3>
-        <p id="mission-status" class="hint" aria-live="polite">Start Mission to begin the fully accessible mode.</p>
+        <p id="mission-status" class="hint" aria-live="polite">Start Game to begin the fully accessible mode.</p>
         <div class="mission-metrics" role="status" aria-live="polite">
           <p><strong>Question:</strong> <span id="mission-round-text">-</span></p>
           <p><strong>Streak:</strong> <span id="mission-streak-text">0</span></p>
@@ -166,7 +160,7 @@
         </div>
         <div id="mission-definition-box" class="definition-box mission-definition-box hidden" aria-live="polite" aria-atomic="true">
           <p class="definition-label">Current Definition</p>
-          <p id="mission-definition-text">Start Mission to load a prompt.</p>
+          <p id="mission-definition-text">Start Game to load a prompt.</p>
         </div>
         <div id="mission-choice-list" class="mission-choice-list" role="group" aria-label="Mission answer choices"></div>
         <div class="mission-actions">
@@ -229,23 +223,23 @@
           <li>Check that the source line shows either bundled default or loaded file.</li>
           <li>Select one or more topics.</li>
           <li>Choose game type and speed (or Mission Accessible options when that mode is selected).</li>
-          <li>Click <strong>Start Mission</strong>.</li>
+          <li>Click <strong>Start Game</strong>.</li>
         </ol>
         <p><strong>Terms File</strong></p>
         <p>Use the provided <code>terms.txt</code> template. Keep the instruction header at the top, including the line <code>Study Arcade, copyright Dr. Grant Benham</code>. Do not delete that line.</p>
         <p><strong>Game Modes</strong></p>
         <p><strong>Mission Accessible:</strong> fully DOM-based gameplay with three large answer choices per prompt, optional timing, and keyboard-first input.</p>
-        <p><strong>Drive:</strong> steer left/right and pass under the banner that matches the current definition.</p>
-        <p><strong>Invaders:</strong> move left/right to choose a lane, then fire at the term that matches the current definition.</p>
-        <p><strong>Memory:</strong> memorize term positions, then match the definition after terms are hidden.</p>
+        <p><strong>Banner Drive:</strong> steer left/right and pass under the banner that matches the current definition.</p>
+        <p><strong>Term Invaders:</strong> move left/right to choose a lane, then fire at the term that matches the current definition.</p>
+        <p><strong>Memory Relay:</strong> memorize term positions, then match the definition after terms are hidden.</p>
         <p><strong>Controls</strong></p>
-        <p>Invaders/Drive/Memory: Left/Right controls or arrow keys, <kbd>P</kbd> pause/resume, <kbd>K</kbd> skip. Fire controls apply to Invaders and Memory.</p>
+        <p>Term Invaders/Banner Drive/Memory Relay: Left/Right controls or arrow keys, <kbd>P</kbd> pause/resume, <kbd>K</kbd> skip. Fire controls apply to Term Invaders and Memory Relay.</p>
         <p>Mission Accessible: use <kbd>1</kbd>, <kbd>2</kbd>, <kbd>3</kbd> to select choices, <kbd>Enter</kbd> or <kbd>Space</kbd> to submit when confirm mode is enabled, <kbd>H</kbd> for hint, <kbd>R</kbd> to repeat the definition, plus <kbd>P</kbd> and <kbd>K</kbd>. Mission pause/skip buttons are also in the Game Arena for easier access while focus is locked.</p>
         <p>Mission Accessible keeps keyboard focus cycling inside the mission arena while active. Use <strong>Adjust Settings</strong> to temporarily unlock focus and jump to Setup controls, then use <strong>Return to Mission Focus</strong> to lock focus back to gameplay.</p>
-        <p>If you change settings during a mission, the game auto-pauses. Changing speed resets the current wave/set in Invaders and Drive, while Mission Accessible applies updated options to the next prompt.</p>
+        <p>If you change settings during a game, gameplay auto-pauses. Changing speed resets the current wave/set in Term Invaders and Banner Drive, while Mission Accessible applies updated options to the next prompt.</p>
         <p>Use <strong>Sound Level</strong> to set audio to Off, Low, Medium, or High (default Medium).</p>
         <p><strong>Scoring</strong></p>
-        <p>All game types use three choices per prompt. Correct answers add points and wrong answers reduce points. In Invaders, city integrity drops when terms reach the city. Wrong Answer Limit (Off/5/10/20) applies to Invaders, Drive, and Memory.</p>
+        <p>All game types use three choices per prompt. Correct answers add points and wrong answers reduce points. In Term Invaders, city integrity drops when terms reach the city. Wrong Answer Limit (Off/5/10/20) applies to Term Invaders, Banner Drive, and Memory Relay.</p>
         <p>The <strong>Missed Terms</strong> panel updates live during missions and shows missed/incorrect items.</p>
       </div>
     </div>

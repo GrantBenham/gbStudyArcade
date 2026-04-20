@@ -8,7 +8,7 @@ Study Arcade is a browser-based learning game for matching terms to definitions.
 2. When hosted (for example GitHub Pages or Brightspace SCORM), the bundled `terms.txt` auto-loads.
 3. The default game mode is **Mission Accessible**.
 4. Optional: click **Load Terms .txt** to replace defaults with any compatible `.txt` file.
-5. Select topics and click **Start Mission**.
+5. Select topics and click **Start Game**.
 
 No web server is required for local testing, but auto-loading `terms.txt` may not work under strict `file://` browser rules. In that case, use **Load Terms .txt**.
 
@@ -33,9 +33,9 @@ Rules:
 ## Game Types
 
 - `Mission Accessible`
-- `Drive`
-- `Invaders`
-- `Memory`
+- `Banner Drive`
+- `Term Invaders`
+- `Memory Relay`
 
 ## SCORM Builder
 
