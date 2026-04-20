@@ -144,9 +144,10 @@
   renderMissedReview();
   renderTopicList();
   setTermsSourceIndicator("none");
-  setDefinitionText("Load a terms .txt file, then press Start Mission.");
+  setDefinitionText("Loading default terms...");
   updateStartAvailability();
   renderMissionAccessibleArena();
+  attemptAutoLoadBundledTerms();
   requestAnimationFrame(loop);
 
   function createGameState() {
@@ -819,6 +820,74 @@
     renderMissionAccessibleArena();
   }
 
+  async function attemptAutoLoadBundledTerms() {
+    if (Object.keys(state.topicsMap).length) {
+      return;
+    }
+    try {
+      const response = await fetch("terms.txt", { cache: "no-store" });
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      const text = await response.text();
+      const loaded = applyTermsText(text, {
+        sourceType: "bundled",
+        sourceLabel: "terms.txt",
+        announceOnError: false
+      });
+      if (!loaded) {
+        if (!Object.keys(state.topicsMap).length) {
+          setDefinitionText("Load a terms .txt file, then press Start Mission.");
+          setTermsSourceIndicator("none");
+        }
+        return;
+      }
+      setDefinitionText("Default terms loaded. Select topics and press Start Mission.");
+      announce("Default terms loaded automatically. Use Load Terms .txt to switch files.");
+    } catch {
+      if (!Object.keys(state.topicsMap).length) {
+        setDefinitionText("Load a terms .txt file, then press Start Mission.");
+        setTermsSourceIndicator("none");
+      }
+    }
+  }
+
+  function applyTermsText(text, options) {
+    const opts = options || {};
+    const sourceType = opts.sourceType || "file";
+    const sourceLabel = opts.sourceLabel || "terms.txt";
+    const announceOnError = opts.announceOnError !== false;
+    const announceOnSuccess = opts.announceOnSuccess !== false;
+
+    if (!hasRequiredCopyrightNotice(text)) {
+      if (announceOnError) {
+        announce(`This file is missing required text: "${REQUIRED_COPYRIGHT_NOTICE}".`, true);
+      }
+      setTermsSourceIndicator("error", "missing required copyright line");
+      return false;
+    }
+
+    const parsed = parseTermsText(text);
+    if (!Object.keys(parsed.topics).length) {
+      if (announceOnError) {
+        announce("No valid topics were found in that file. Use the provided terms.txt template and keep the instruction header.", true);
+      }
+      setTermsSourceIndicator("error", "no valid topics found");
+      return false;
+    }
+
+    state.topicsMap = parsed.topics;
+    const topics = Object.keys(parsed.topics);
+    state.selectedTopics = new Set(topics.length ? [topics[0]] : []);
+    renderTopicList();
+    updateStartAvailability();
+    setTermsSourceIndicator(sourceType, sourceLabel);
+    if (announceOnSuccess) {
+      announce(`Loaded ${topics.length} topics from ${sourceLabel}. First topic preselected.`);
+    }
+    return true;
+  }
+
   async function loadTermsFromUserFile(file) {
     let text = "";
     try {
@@ -829,26 +898,14 @@
       return;
     }
 
-    if (!hasRequiredCopyrightNotice(text)) {
-      announce(`This file is missing required text: "${REQUIRED_COPYRIGHT_NOTICE}".`, true);
-      setTermsSourceIndicator("error", "missing required copyright line");
+    const loaded = applyTermsText(text, {
+      sourceType: "file",
+      sourceLabel: file.name || "custom_terms.txt"
+    });
+    if (!loaded) {
       return;
     }
-
-    const parsed = parseTermsText(text);
-    if (!Object.keys(parsed.topics).length) {
-      announce("No valid topics were found in that file. Use the provided terms.txt template and keep the instruction header.", true);
-      setTermsSourceIndicator("error", "no valid topics found");
-      return;
-    }
-
-    state.topicsMap = parsed.topics;
-    const topics = Object.keys(parsed.topics);
-    state.selectedTopics = new Set(topics.length ? [topics[0]] : []);
-    renderTopicList();
-    updateStartAvailability();
-    setTermsSourceIndicator("file", file.name || "custom_terms.txt");
-    announce(`Loaded ${topics.length} topics from ${file.name || "selected file"}. First topic preselected.`);
+    setDefinitionText("Custom terms loaded. Select topics and press Start Mission.");
   }
 
   function setTermsSourceIndicator(sourceType, label) {
@@ -864,6 +921,11 @@
     if (sourceType === "none") {
       els.termsSourceIndicator.textContent = "Term Source: no terms file loaded";
       els.termsSourceIndicator.dataset.source = "none";
+      return;
+    }
+    if (sourceType === "bundled") {
+      els.termsSourceIndicator.textContent = `Term Source: bundled default (${label || "terms.txt"})`;
+      els.termsSourceIndicator.dataset.source = "bundled";
       return;
     }
     els.termsSourceIndicator.textContent = `Term Source: loaded file (${label || "terms.txt"})`;

@@ -1,84 +1,57 @@
-# Study Arcade (HTML)
+﻿# Study Arcade
 
-`Study Arcade` is an accessible browser game that keeps the same educational goal as `term_invaders.py`: identify the correct term from a displayed definition under arcade pressure.
-
-Startup defaults are intentionally learner-friendly:
-
-- High contrast enabled
-- Game Type set to Term Invaders
-- 2 choices per round
-- Speed set to Normal
-- Only the first topic preselected after term file load
+Study Arcade is a browser-based learning game for matching terms to definitions.
 
 ## Run
 
-1. Open `index.html` in a web browser.
-2. Click **Load Terms .txt** and choose the provided `terms.txt` (or your own compatible file).
-3. Select topics and click **Start Mission**.
-4. Use the `?` help icon in Setup anytime for built-in instructions.
+1. Open `index.html` in a browser.
+2. When hosted (for example GitHub Pages or Brightspace SCORM), the bundled `terms.txt` auto-loads.
+3. Optional: click **Load Terms .txt** to replace defaults with any compatible `.txt` file.
+4. Select topics and click **Start Mission**.
 
-No server is required.
+No web server is required for local testing, but auto-loading `terms.txt` may not work under strict `file://` browser rules. In that case, use **Load Terms .txt**.
 
 ## Term File Format
-
-Use the provided `terms.txt` as your starter file, or create your own.
 
 Use this format:
 
 ```txt
+// Study Arcade, copyright Dr. Grant Benham
 # Topic Name
 Term: Definition
-Term with colon support: Definition may include: additional colons
+Another term: Definition text
 ```
 
 Rules:
 
 - Topic lines must start with `#`.
-- Each term line must use the first `:` to split term and definition.
-- Blank lines are allowed.
-
-## Use Other Class Content
-
-Create or edit a compatible `.txt` file and load it with **Load Terms .txt**.
-
-## Score Storage
-
-- Top 3 scores are saved in browser local storage when available.
-- Use the **Clear Scores** button to reset them.
-- If local storage is blocked by browser privacy settings, scores still work during the current open session but will not persist after closing.
-
-## Mission Tally
-
-- The right panel includes a running list of terms correctly guessed in the current mission.
-- The list resets when a new mission starts.
-
-## Accessibility Features
-
-- Full keyboard gameplay:
-- `Term Invaders`: on-screen Left/Right + Fire controls, plus `1`-`3`, arrows, `Enter`/`Space`, `P`, `K`
-- `Banner Drive`: smooth left/right with arrow keys, plus `P` and `K`
-- Visible focus outlines and large controls
-- Reduced motion toggle
-- High contrast toggle
-- Status announcements for assistive technology via ARIA live regions
-- Adjustable speed and choices-per-round to reduce time-pressure barriers
-
-## Scoring and Integrity
-
-- Correct hit: `+100` points
-- Wrong hit: point reduction, city integrity unchanged
-- Missed shot in an empty lane: small point reduction
-- City integrity decreases only when a round reaches the city line
-
-## Round Flow
-
-- Each wave shows `2` or `3` terms at once.
-- The game shows one definition at a time for one of the terms currently in that wave.
-- When you correctly hit a term, only that term is removed, and the next definition is selected from the remaining on-screen terms.
-- A new wave starts only after all terms in the current wave are correctly cleared or if any term breaches the city line.
-- Unresolved terms are returned to the pool for later waves.
+- Each term line must contain a colon (`:`). The first colon splits term from definition.
+- Instruction lines can start with `//` or `;` and are ignored by the parser.
+- The required copyright line must be present somewhere in the file.
 
 ## Game Types
 
-- `Term Invaders` (default): choose a lane and fire at the matching term.
-- `Banner Drive`: steer a car smoothly left/right and pass under the correct banner as sets scroll downward.
+- `Term Invaders`
+- `Banner Drive`
+- `Memory Relay`
+- `Mission Accessible`
+
+## SCORM Builder
+
+This folder includes a Windows GUI builder:
+
+- `StudyArcadeScormBuilder.exe`
+
+Use it to create Brightspace-ready SCORM 1.2 zip files:
+
+1. Select project folder.
+2. Select any terms source file (`.txt`).
+3. Choose output zip name.
+4. Set activity title and package identifier.
+5. Build.
+
+The selected terms file is always packaged as `terms.txt` inside the SCORM zip.
+
+## Score Storage
+
+Top scores are saved in browser local storage when available.
