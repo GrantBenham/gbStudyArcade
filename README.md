@@ -45,9 +45,9 @@ This folder includes a Windows GUI builder:
 Use it to create Brightspace-ready SCORM 1.2 zip files:
 
 1. Select project folder.
-2. Select any terms source file (`.txt`).
-3. Choose output zip name.
-4. Set activity title and package identifier.
+2. Choose a preset (`Demo`, `Biopsych`, `Health Psych`, or `Custom`).
+3. Presets auto-fill terms source file, output zip name, activity title, and package identifier.
+4. Optional: edit any field manually.
 5. Build.
 
 The selected terms file is always packaged as `terms.txt` inside the SCORM zip.

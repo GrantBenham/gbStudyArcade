@@ -20,12 +20,14 @@ namespace ScormBuilderTool
 
     internal sealed class BuilderForm : Form
     {
+        private readonly ComboBox _presetCombo = new ComboBox();
         private readonly TextBox _projectFolderText = new TextBox();
         private readonly TextBox _termsFileText = new TextBox();
         private readonly TextBox _outputZipText = new TextBox();
         private readonly TextBox _activityTitleText = new TextBox();
         private readonly TextBox _packageIdText = new TextBox();
         private readonly Label _statusLabel = new Label();
+        private bool _suppressPresetChange;
 
         internal BuilderForm()
         {
@@ -51,6 +53,7 @@ namespace ScormBuilderTool
             guidance.MaximumSize = new System.Drawing.Size(920, 0);
             guidance.Text =
                 "Build a Brightspace-ready SCORM 1.2 zip for Study Arcade.\r\n" +
+                "Optional: choose a preset to auto-fill class-specific values.\r\n" +
                 "1) Choose the project folder containing index.html/app.js/styles.css.\r\n" +
                 "2) Choose which terms file to package (it will be renamed to terms.txt inside the zip).\r\n" +
                 "3) Set Activity Title (this is the Brightspace-visible activity name from the SCORM manifest).\r\n" +
@@ -60,22 +63,23 @@ namespace ScormBuilderTool
             var fields = new TableLayoutPanel();
             fields.Dock = DockStyle.Fill;
             fields.ColumnCount = 3;
-            fields.RowCount = 6;
+            fields.RowCount = 7;
             fields.Padding = new Padding(0, 12, 0, 0);
             fields.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 180));
             fields.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f));
             fields.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 125));
-            for (var i = 0; i < 6; i += 1)
+            for (var i = 0; i < 7; i += 1)
             {
                 fields.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             }
             root.Controls.Add(fields, 0, 1);
 
-            AddFileRow(fields, 0, "Project Folder", _projectFolderText, "Browse...", BrowseProjectFolder);
-            AddFileRow(fields, 1, "Terms Source File", _termsFileText, "Browse...", BrowseTermsFile);
-            AddFileRow(fields, 2, "Output Zip", _outputZipText, "Browse...", BrowseOutputZip);
-            AddTextRow(fields, 3, "Activity Title", _activityTitleText);
-            AddTextRow(fields, 4, "Package Identifier", _packageIdText);
+            AddPresetRow(fields, 0, "Preset", _presetCombo);
+            AddFileRow(fields, 1, "Project Folder", _projectFolderText, "Browse...", BrowseProjectFolder);
+            AddFileRow(fields, 2, "Terms Source File", _termsFileText, "Browse...", BrowseTermsFile);
+            AddFileRow(fields, 3, "Output Zip", _outputZipText, "Browse...", BrowseOutputZip);
+            AddTextRow(fields, 4, "Activity Title", _activityTitleText);
+            AddTextRow(fields, 5, "Package Identifier", _packageIdText);
 
             var note = new Label();
             note.Dock = DockStyle.Top;
@@ -85,7 +89,7 @@ namespace ScormBuilderTool
             note.Text =
                 "Tip: Any selected terms file is packed as terms.txt inside the SCORM zip.\r\n" +
                 "GitHub Pages behavior is unaffected. This only builds a course-package zip.";
-            fields.Controls.Add(note, 0, 5);
+            fields.Controls.Add(note, 0, 6);
             fields.SetColumnSpan(note, 3);
 
             var actions = new FlowLayoutPanel();
@@ -145,6 +149,22 @@ namespace ScormBuilderTool
             table.Controls.Add(browse, 2, row);
         }
 
+        private static void AddPresetRow(TableLayoutPanel table, int row, string labelText, ComboBox comboBox)
+        {
+            var label = new Label();
+            label.Text = labelText;
+            label.AutoSize = true;
+            label.Anchor = AnchorStyles.Left;
+            label.Margin = new Padding(0, 8, 8, 8);
+            table.Controls.Add(label, 0, row);
+
+            comboBox.Dock = DockStyle.Fill;
+            comboBox.Margin = new Padding(0, 4, 8, 4);
+            comboBox.DropDownStyle = ComboBoxStyle.DropDownList;
+            table.Controls.Add(comboBox, 1, row);
+            table.SetColumnSpan(comboBox, 2);
+        }
+
         private static void AddTextRow(TableLayoutPanel table, int row, string labelText, TextBox textBox)
         {
             var label = new Label();
@@ -164,11 +184,84 @@ namespace ScormBuilderTool
         {
             var baseDir = AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
             _projectFolderText.Text = baseDir;
-            var defaultTerms = Path.Combine(baseDir, "terms.txt");
-            _termsFileText.Text = File.Exists(defaultTerms) ? defaultTerms : string.Empty;
-            _outputZipText.Text = Path.Combine(baseDir, "gbStudyArcade-scorm12.zip");
-            _activityTitleText.Text = "Study Arcade";
-            _packageIdText.Text = "gbStudyArcade_SCORM12";
+            ConfigurePresets(baseDir);
+            ApplySelectedPreset();
+            _presetCombo.SelectedIndexChanged += delegate
+            {
+                if (_suppressPresetChange)
+                {
+                    return;
+                }
+                ApplySelectedPreset();
+            };
+        }
+
+        private void ConfigurePresets(string folder)
+        {
+            _suppressPresetChange = true;
+            var previous = _presetCombo.SelectedItem == null ? string.Empty : _presetCombo.SelectedItem.ToString();
+            _presetCombo.Items.Clear();
+            _presetCombo.Items.Add("Demo (terms.txt)");
+            if (File.Exists(Path.Combine(folder, "BPterms.txt")))
+            {
+                _presetCombo.Items.Add("Biopsych (BPterms.txt)");
+            }
+            if (File.Exists(Path.Combine(folder, "HPterms.txt")))
+            {
+                _presetCombo.Items.Add("Health Psych (HPterms.txt)");
+            }
+            _presetCombo.Items.Add("Custom (Manual)");
+
+            var target = string.IsNullOrWhiteSpace(previous) ? "Demo (terms.txt)" : previous;
+            var selectedIndex = _presetCombo.Items.IndexOf(target);
+            _presetCombo.SelectedIndex = selectedIndex >= 0 ? selectedIndex : 0;
+            _suppressPresetChange = false;
+        }
+
+        private void ApplySelectedPreset()
+        {
+            var folder = _projectFolderText.Text.Trim();
+            if (!Directory.Exists(folder))
+            {
+                return;
+            }
+
+            var selected = _presetCombo.SelectedItem == null ? string.Empty : _presetCombo.SelectedItem.ToString();
+            if (selected == "Custom (Manual)")
+            {
+                return;
+            }
+
+            string fileName;
+            string suffix;
+            string title;
+            if (selected == "Biopsych (BPterms.txt)")
+            {
+                fileName = "BPterms.txt";
+                suffix = "biopsych";
+                title = "Study Arcade - Biopsych";
+            }
+            else if (selected == "Health Psych (HPterms.txt)")
+            {
+                fileName = "HPterms.txt";
+                suffix = "healthpsych";
+                title = "Study Arcade - Health Psych";
+            }
+            else
+            {
+                fileName = "terms.txt";
+                suffix = "demo";
+                title = "Study Arcade";
+            }
+
+            var termsPath = Path.Combine(folder, fileName);
+            if (File.Exists(termsPath))
+            {
+                _termsFileText.Text = termsPath;
+            }
+            _outputZipText.Text = Path.Combine(folder, "gbStudyArcade-" + suffix + "-scorm12.zip");
+            _activityTitleText.Text = title;
+            _packageIdText.Text = BuildIdentifierFromTitle(title);
         }
 
         private void BrowseProjectFolder()
@@ -183,12 +276,8 @@ namespace ScormBuilderTool
                 }
 
                 _projectFolderText.Text = dialog.SelectedPath;
-                var defaultTerms = Path.Combine(dialog.SelectedPath, "terms.txt");
-                if (File.Exists(defaultTerms))
-                {
-                    _termsFileText.Text = defaultTerms;
-                }
-                _outputZipText.Text = Path.Combine(dialog.SelectedPath, "gbStudyArcade-scorm12.zip");
+                ConfigurePresets(dialog.SelectedPath);
+                ApplySelectedPreset();
             }
         }
 
