@@ -1658,7 +1658,7 @@
     if (!state.game.correctTerms.length) {
       const li = document.createElement("li");
       li.className = "scores-empty";
-      li.textContent = "No correct terms yet this mission.";
+      li.textContent = "No correct terms yet.";
       els.correctTermsList.appendChild(li);
       return;
     }
@@ -1708,31 +1708,28 @@
     const reviewEntries = Object.values(state.game.missedReviewByKey || {})
       .sort((a, b) => b.count - a.count || a.term.localeCompare(b.term));
 
-    if (!state.game.gameOver) {
-      els.missedReviewNote.textContent = state.game.running
-        ? "Complete this mission to view missed terms."
-        : "Finish a mission to view missed terms.";
-      const li = document.createElement("li");
-      li.className = "scores-empty";
-      li.textContent = "Post-mission review appears here.";
-      els.missedReviewList.appendChild(li);
-      return;
-    }
-
     if (!reviewEntries.length) {
-      els.missedReviewNote.textContent = "No missed terms in this mission.";
+      if (state.game.running) {
+        els.missedReviewNote.textContent = "Live mission misses appear here.";
+      } else if (state.game.gameOver) {
+        els.missedReviewNote.textContent = "No missed terms in this mission.";
+      } else {
+        els.missedReviewNote.textContent = "Start a mission to populate this list.";
+      }
       const li = document.createElement("li");
       li.className = "scores-empty";
-      li.textContent = "Great run: no missed terms to review.";
+      li.textContent = "No missed terms yet.";
       els.missedReviewList.appendChild(li);
       return;
     }
 
-    els.missedReviewNote.textContent = "Missed terms from this mission (with miss count):";
+    els.missedReviewNote.textContent = state.game.running
+      ? "Live mission misses (updates during play):"
+      : "Missed terms from this mission:";
     reviewEntries.forEach((entry) => {
       const li = document.createElement("li");
       const countSuffix = entry.count === 1 ? "1 miss" : `${entry.count} misses`;
-      li.textContent = `${entry.term} (${countSuffix}): ${entry.definition}`;
+      li.textContent = `${entry.term} (${countSuffix})`;
       els.missedReviewList.appendChild(li);
     });
   }
